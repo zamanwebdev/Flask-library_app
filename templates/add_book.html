@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}নতুন বই{% endblock %}
+{% block topbar_title %}নতুন বই যোগ{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4 page-header">
+    <div><h1>নতুন বই যোগ</h1><p class="text-muted mb-0">গ্রন্থাগারের সংগ্রহে নতুন বই অন্তর্ভুক্ত করুন</p></div>
+    <a href="{{ url_for('books') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>ফিরে যান</a>
+</div>
+
+<div class="row justify-content-start">
+    <div class="col-lg-7">
+        <div class="card content-card">
+            <div class="card-header"><i class="bi bi-book-fill me-2 text-warning"></i>বইয়ের তথ্য</div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">বইয়ের শিরোনাম <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control" required placeholder="যেমন: আমার সোনার বাংলা">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">লেখকের নাম <span class="text-danger">*</span></label>
+                            <input type="text" name="author" class="form-control" required placeholder="যেমন: রবীন্দ্রনাথ ঠাকুর">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ISBN নম্বর</label>
+                            <input type="text" name="isbn" class="form-control" placeholder="978-0-123456-78-9">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ধরন / Genre</label>
+                            <select name="genre" class="form-select">
+                                <option value="">নির্বাচন করুন</option>
+                                {% for g in ['Fiction','Non-Fiction','Fantasy','Science Fiction','Dystopian','Romance','Mystery','History','Philosophy','Biography','Poetry','Children'] %}
+                                <option value="{{ g }}">{{ g }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">কপির সংখ্যা <span class="text-danger">*</span></label>
+                            <input type="number" name="copies" class="form-control" value="1" min="1" max="100" required>
+                        </div>
+                        <div class="col-12 pt-2">
+                            <button type="submit" class="btn btn-gold px-4"><i class="bi bi-plus me-2"></i>বই যোগ করুন</button>
+                            <a href="{{ url_for('books') }}" class="btn btn-outline-secondary ms-2">বাতিল</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

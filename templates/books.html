@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}ইস্যু / ফেরত{% endblock %}
+{% block topbar_title %}বই ইস্যু ও ফেরত{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4 page-header">
+    <div><h1>ইস্যু ও ফেরত</h1><p class="text-muted mb-0">বই ইস্যু করুন এবং ফেরত নিন</p></div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Issue Form -->
+    <div class="col-lg-7">
+        <div class="card content-card h-100">
+            <div class="card-header"><i class="bi bi-box-arrow-up me-2 text-warning"></i>বই ইস্যু করুন</div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">বই নির্বাচন করুন <span class="text-danger">*</span></label>
+                            <select name="book_id" class="form-select" required>
+                                <option value="">— বই বেছে নিন —</option>
+                                {% for book in books %}
+                                <option value="{{ book.id }}">{{ book.title }} — {{ book.author }} ({{ book.available_copies }} কপি)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">সদস্য নির্বাচন করুন <span class="text-danger">*</span></label>
+                            <select name="member_id" class="form-select" required>
+                                <option value="">— সদস্য বেছে নিন —</option>
+                                {% for m in members %}
+                                <option value="{{ m.id }}">{{ m.name }} ({{ m.email }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">কতদিনের জন্য (দিন)</label>
+                            <input type="number" name="days" class="form-control" value="14" min="1" max="90">
+                        </div>
+                        <div class="col-12 pt-2">
+                            <button type="submit" class="btn btn-gold px-5"><i class="bi bi-send me-2"></i>বই ইস্যু করুন</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="col-lg-5">
+        <div class="card h-100 border-0 text-white" style="background:linear-gradient(135deg,#0f172a,#1e293b)">
+            <div class="card-body d-flex flex-column justify-content-center align-items-center text-center p-4">
+                <div style="font-size:3.5rem;margin-bottom:.5rem">📚</div>
+                <div style="font-family:'Playfair Display',serif;font-size:3rem;font-weight:900;color:var(--gold);line-height:1">{{ borrowings|length }}</div>
+                <div class="mt-1 mb-4" style="color:rgba(255,255,255,.6)">বর্তমানে ইস্যুকৃত বই</div>
+                <div class="border-top w-100 pt-3" style="border-color:rgba(255,255,255,.1)!important">
+                    <div class="row text-center">
+                        <div class="col">
+                            <div style="font-size:1.5rem;font-weight:700;color:#fff">{{ books|length }}</div>
+                            <div style="font-size:.75rem;color:rgba(255,255,255,.4)">উপলব্ধ টাইটেল</div>
+                        </div>
+                        <div class="col">
+                            <div style="font-size:1.5rem;font-weight:700;color:var(--gold)">{{ members|length }}</div>
+                            <div style="font-size:.75rem;color:rgba(255,255,255,.4)">মোট সদস্য</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Borrowings Table -->
+<div class="card content-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-list-check me-2 text-warning"></i>সক্রিয় ইস্যু তালিকা</span>
+        <span class="badge bg-warning bg-opacity-15 text-warning">{{ borrowings|length }} টি</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead><tr><th>বই</th><th>সদস্য</th><th>ইস্যুর তারিখ</th><th>শেষ তারিখ</th><th>অবস্থা</th><th>অ্যাকশন</th></tr></thead>
+                <tbody>
+                    {% for b in borrowings %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="book-cover-sm" style="background:{{ b.cover_color }}"><i class="bi bi-book-fill"></i></div>
+                                <span class="fw-semibold">{{ b.title }}</span>
+                            </div>
+                        </td>
+                        <td class="fw-medium">{{ b.member_name }}</td>
+                        <td class="text-muted small">{{ b.borrow_date[:10] }}</td>
+                        <td class="fw-semibold small {% if b.due_date < '2026-02-26' %}text-danger{% endif %}">{{ b.due_date }}</td>
+                        <td>
+                            {% if b.due_date < '2026-02-26' %}
+                            <span class="badge bg-danger bg-opacity-15 text-danger"><i class="bi bi-exclamation-triangle me-1"></i>মেয়াদোত্তীর্ণ</span>
+                            {% else %}
+                            <span class="badge bg-warning bg-opacity-15 text-warning">ইস্যুকৃত</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('return_book', borrow_id=b.id) }}" onsubmit="return confirm('বইটি ফেরত নেবেন?')">
+                                <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-arrow-return-left me-1"></i>ফেরত নিন</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-check-circle" style="font-size:2rem;color:#2ECC71;opacity:.4;display:block;margin-bottom:.5rem"></i>কোনো বই বর্তমানে ইস্যু নেই</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
