@@ -8,9 +8,7 @@ from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = 'library_secret_key_2024'
-
 DB_PATH = 'library.db'
-# Credentials are stored in DB (init_db sets defaults)
 
 # ════════════════════════════════════════════
 #  Decorators
@@ -37,6 +35,15 @@ def super_required(f):
         if not session.get('is_super'):
             flash('এই পেজটি শুধুমাত্র Super Admin এর জন্য।', 'error')
             return redirect(url_for('dashboard'))
+        return f(*args, **kwargs)
+    return decorated
+
+def student_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('student_logged_in'):
+            flash('বই request করতে আগে Student Login করুন।', 'info')
+            return redirect(url_for('student_login', next=request.path))
         return f(*args, **kwargs)
     return decorated
 
@@ -77,33 +84,36 @@ def init_db():
 
     c.execute('''CREATE TABLE IF NOT EXISTS book_requests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        book_id INTEGER NOT NULL, student_name TEXT NOT NULL,
-        student_phone TEXT, student_note TEXT,
+        book_id INTEGER NOT NULL, student_id INTEGER NOT NULL,
+        student_note TEXT,
         request_date TEXT DEFAULT CURRENT_TIMESTAMP,
         status TEXT DEFAULT 'pending', admin_note TEXT, resolved_date TEXT,
         pdf_filename TEXT,
-        FOREIGN KEY(book_id) REFERENCES books(id)
+        FOREIGN KEY(book_id) REFERENCES books(id),
+        FOREIGN KEY(student_id) REFERENCES students(id)
     )''')
-    # Migration: add pdf_filename if upgrading from old DB
-    try:
-        c.execute("ALTER TABLE book_requests ADD COLUMN pdf_filename TEXT")
-    except:
-        pass
 
-    # ── Library settings table ──
+    # ── Student accounts table ──
+    c.execute('''CREATE TABLE IF NOT EXISTS students (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        phone TEXT,
+        password TEXT NOT NULL,
+        reg_date TEXT DEFAULT CURRENT_TIMESTAMP,
+        active INTEGER DEFAULT 1
+    )''')
+
     c.execute('''CREATE TABLE IF NOT EXISTS settings (
-        key TEXT PRIMARY KEY,
-        value TEXT
+        key TEXT PRIMARY KEY, value TEXT
     )''')
 
-    # Default settings
     defaults = [
         ('library_name',    'BiblioTech'),
         ('library_tagline', 'Library System'),
         ('library_logo',    '📚'),
         ('library_footer',  'সিটি পাবলিক লাইব্রেরি'),
         ('logo_type',       'emoji'),
-        # Credentials (stored as plain text — swap for hashed in production)
         ('admin_username',  'admin'),
         ('admin_password',  'admin123'),
         ('super_username',  'superadmin'),
@@ -127,26 +137,12 @@ def init_db():
             c.execute('INSERT INTO books (title, author, isbn, genre, total_copies, available_copies, cover_color) VALUES (?,?,?,?,?,?,?)', book)
         except: pass
 
-    sample_members = [
-        ('Rahim Hossain', 'rahim@example.com', '01711-234567'),
-        ('Karim Ahmed',   'karim@example.com', '01812-345678'),
-        ('Nadia Islam',   'nadia@example.com', '01913-456789'),
-        ('Sadia Rahman',  'sadia@example.com', '01611-567890'),
-    ]
-    for member in sample_members:
-        try:
-            c.execute('INSERT INTO members (name, email, phone) VALUES (?,?,?)', member)
-        except: pass
-
+    os.makedirs('static/pdfs', exist_ok=True)
     conn.commit()
     conn.close()
 
-    # PDF storage folder
-    os.makedirs('static/pdfs', exist_ok=True)
-
 
 def get_settings():
-    """Settings dict সব template এ পাঠানো হবে।"""
     conn = get_db()
     rows = conn.execute('SELECT key, value FROM settings').fetchall()
     conn.close()
@@ -155,23 +151,20 @@ def get_settings():
 
 @app.context_processor
 def inject_settings():
-    """প্রতিটি template এ automatically settings inject করে।"""
     return dict(site=get_settings())
 
 
 # ════════════════════════════════════════════
-#  Auth
+#  Admin Auth
 # ════════════════════════════════════════════
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if session.get('logged_in'):
         return redirect(url_for('dashboard') if session.get('is_admin') else url_for('books'))
-
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
-
         s = get_settings()
         if username == s.get('super_username') and password == s.get('super_password'):
             session['logged_in'] = True
@@ -180,18 +173,15 @@ def login():
             session['username']  = username
             flash('স্বাগতম, Super Admin!', 'success')
             return redirect(url_for('settings'))
-
         elif username == s.get('admin_username') and password == s.get('admin_password'):
             session['logged_in'] = True
             session['is_admin']  = True
             session['is_super']  = False
             session['username']  = username
-            flash('স্বাগতম, Admin! সফলভাবে লগইন হয়েছে।', 'success')
+            flash('স্বাগতম, Admin!', 'success')
             return redirect(request.args.get('next', url_for('dashboard')))
-
         else:
             flash('ভুল Username বা Password!', 'error')
-
     return render_template('login.html')
 
 
@@ -203,6 +193,84 @@ def logout():
 
 
 # ════════════════════════════════════════════
+#  Student Auth
+# ════════════════════════════════════════════
+
+@app.route('/student/register', methods=['GET', 'POST'])
+def student_register():
+    if session.get('student_logged_in'):
+        return redirect(url_for('my_books'))
+
+    if request.method == 'POST':
+        name     = request.form.get('name', '').strip()
+        email    = request.form.get('email', '').strip()
+        phone    = request.form.get('phone', '').strip()
+        password = request.form.get('password', '').strip()
+        confirm  = request.form.get('confirm_password', '').strip()
+
+        if not name or not email or not password:
+            flash('নাম, ইমেইল ও পাসওয়ার্ড আবশ্যক।', 'error')
+            return redirect(url_for('student_register'))
+        if len(password) < 6:
+            flash('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।', 'error')
+            return redirect(url_for('student_register'))
+        if password != confirm:
+            flash('পাসওয়ার্ড দুটো মিলছে না।', 'error')
+            return redirect(url_for('student_register'))
+
+        conn = get_db()
+        try:
+            conn.execute('INSERT INTO students (name, email, phone, password) VALUES (?,?,?,?)',
+                         (name, email, phone, password))
+            conn.commit()
+            flash('Registration সফল! এখন লগইন করুন।', 'success')
+            conn.close()
+            return redirect(url_for('student_login'))
+        except Exception:
+            flash('এই ইমেইল দিয়ে আগেই registration আছে।', 'error')
+            conn.close()
+            return redirect(url_for('student_register'))
+
+    return render_template('student_register.html')
+
+
+@app.route('/student/login', methods=['GET', 'POST'])
+def student_login():
+    if session.get('student_logged_in'):
+        return redirect(url_for('my_books'))
+
+    if request.method == 'POST':
+        email    = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+
+        conn     = get_db()
+        student  = conn.execute('SELECT * FROM students WHERE email=? AND active=1', (email,)).fetchone()
+        conn.close()
+
+        if student and student['password'] == password:
+            session['student_logged_in'] = True
+            session['student_id']        = student['id']
+            session['student_name']      = student['name']
+            session['student_email']     = student['email']
+            flash(f'স্বাগতম, {student["name"]}!', 'success')
+            return redirect(request.args.get('next', url_for('my_books')))
+        else:
+            flash('ভুল Email বা Password!', 'error')
+
+    return render_template('student_login.html')
+
+
+@app.route('/student/logout')
+def student_logout():
+    session.pop('student_logged_in', None)
+    session.pop('student_id', None)
+    session.pop('student_name', None)
+    session.pop('student_email', None)
+    flash('লগআউট হয়েছে।', 'info')
+    return redirect(url_for('books'))
+
+
+# ════════════════════════════════════════════
 #  Super Admin — Settings
 # ════════════════════════════════════════════
 
@@ -210,50 +278,76 @@ def logout():
 @super_required
 def settings():
     if request.method == 'POST':
-        conn = get_db()
-
+        conn            = get_db()
         library_name    = request.form.get('library_name', '').strip()
         library_tagline = request.form.get('library_tagline', '').strip()
         library_footer  = request.form.get('library_footer', '').strip()
         logo_type       = request.form.get('logo_type', 'emoji')
         library_logo    = request.form.get('library_logo', '📚').strip()
-
-        # Image upload হলে base64 এ store করব
-        logo_file = request.files.get('logo_file')
+        logo_file       = request.files.get('logo_file')
         if logo_file and logo_file.filename:
             allowed = {'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'}
             ext = logo_file.filename.rsplit('.', 1)[-1].lower()
             if ext in allowed:
-                img_data   = logo_file.read()
-                b64        = base64.b64encode(img_data).decode('utf-8')
-                mime       = 'image/svg+xml' if ext == 'svg' else f'image/{ext}'
+                b64          = base64.b64encode(logo_file.read()).decode('utf-8')
+                mime         = 'image/svg+xml' if ext == 'svg' else f'image/{ext}'
                 library_logo = f'data:{mime};base64,{b64}'
                 logo_type    = 'image'
             else:
                 flash('শুধু PNG, JPG, GIF, SVG, WEBP ফাইল আপলোড করা যাবে।', 'error')
                 conn.close()
                 return redirect(url_for('settings'))
-
-        updates = {
-            'library_name':    library_name    or 'BiblioTech',
+        for key, val in {
+            'library_name': library_name or 'BiblioTech',
             'library_tagline': library_tagline or 'Library System',
-            'library_footer':  library_footer  or '',
-            'library_logo':    library_logo,
-            'logo_type':       logo_type,
-        }
-        for key, val in updates.items():
+            'library_footer': library_footer or '',
+            'library_logo': library_logo,
+            'logo_type': logo_type,
+        }.items():
             conn.execute('UPDATE settings SET value=? WHERE key=?', (val, key))
-
         conn.commit()
         conn.close()
         flash('Settings সফলভাবে আপডেট হয়েছে!', 'success')
         return redirect(url_for('settings'))
-
     return render_template('settings.html')
 
 
 # ════════════════════════════════════════════
-#  Public
+#  Change Password
+# ════════════════════════════════════════════
+
+@app.route('/change-password', methods=['GET', 'POST'])
+@admin_required
+def change_password():
+    if request.method == 'POST':
+        current  = request.form.get('current_password', '').strip()
+        new_pw   = request.form.get('new_password', '').strip()
+        confirm  = request.form.get('confirm_password', '').strip()
+        s        = get_settings()
+        is_super = session.get('is_super')
+        correct  = s.get('super_password') if is_super else s.get('admin_password')
+        pw_key   = 'super_password'        if is_super else 'admin_password'
+        if current != correct:
+            flash('বর্তমান পাসওয়ার্ড সঠিক নয়!', 'error')
+            return redirect(url_for('change_password'))
+        if len(new_pw) < 6:
+            flash('নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।', 'error')
+            return redirect(url_for('change_password'))
+        if new_pw != confirm:
+            flash('নতুন পাসওয়ার্ড দুটো মিলছে না!', 'error')
+            return redirect(url_for('change_password'))
+        conn = get_db()
+        conn.execute('UPDATE settings SET value=? WHERE key=?', (new_pw, pw_key))
+        conn.commit()
+        conn.close()
+        flash('পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! আবার লগইন করুন।', 'success')
+        session.clear()
+        return redirect(url_for('login'))
+    return render_template('change_password.html')
+
+
+# ════════════════════════════════════════════
+#  Public — বইয়ের তালিকা
 # ════════════════════════════════════════════
 
 @app.route('/')
@@ -266,7 +360,6 @@ def books():
     search = request.args.get('search', '')
     genre  = request.args.get('genre', '')
     conn   = get_db()
-
     query  = 'SELECT * FROM books WHERE 1=1'
     params = []
     if search:
@@ -276,15 +369,16 @@ def books():
         query += ' AND genre = ?'
         params.append(genre)
     query += ' ORDER BY title'
-
     books_list = conn.execute(query, params).fetchall()
     genres     = conn.execute('SELECT DISTINCT genre FROM books WHERE genre IS NOT NULL ORDER BY genre').fetchall()
 
     pending_requests = {}
     if session.get('is_admin'):
         rows = conn.execute("""
-            SELECT book_id, id, student_name, student_phone, request_date
-            FROM book_requests WHERE status='pending' ORDER BY request_date ASC
+            SELECT br.book_id, br.id, s.name as student_name, s.phone as student_phone, br.request_date
+            FROM book_requests br
+            JOIN students s ON br.student_id = s.id
+            WHERE br.status='pending' ORDER BY br.request_date ASC
         """).fetchall()
         for row in rows:
             bid = row['book_id']
@@ -298,18 +392,18 @@ def books():
                            pending_requests=pending_requests)
 
 
+# ════════════════════════════════════════════
+#  Student — Request, My Books, PDF
+# ════════════════════════════════════════════
+
 @app.route('/request-book/<int:book_id>', methods=['POST'])
+@student_required
 def request_book(book_id):
-    student_name  = request.form.get('student_name', '').strip()
-    student_phone = request.form.get('student_phone', '').strip()
-    student_note  = request.form.get('student_note', '').strip()
-
-    if not student_name:
-        flash('নাম দেওয়া আবশ্যক!', 'error')
-        return redirect(url_for('books'))
-
+    student_id   = session['student_id']
+    student_note = request.form.get('student_note', '').strip()
     conn = get_db()
     book = conn.execute('SELECT * FROM books WHERE id=?', (book_id,)).fetchone()
+
     if not book:
         flash('বইটি পাওয়া যায়নি!', 'error')
         conn.close()
@@ -319,16 +413,57 @@ def request_book(book_id):
         conn.close()
         return redirect(url_for('books'))
 
-    conn.execute('INSERT INTO book_requests (book_id, student_name, student_phone, student_note) VALUES (?,?,?,?)',
-                 (book_id, student_name, student_phone, student_note))
+    # একই student একই বই double request করতে পারবে না
+    existing = conn.execute(
+        "SELECT id FROM book_requests WHERE book_id=? AND student_id=? AND status='pending'",
+        (book_id, student_id)
+    ).fetchone()
+    if existing:
+        flash('আপনি ইতিমধ্যে এই বইটির জন্য request করেছেন।', 'info')
+        conn.close()
+        return redirect(url_for('books'))
+
+    conn.execute('INSERT INTO book_requests (book_id, student_id, student_note) VALUES (?,?,?)',
+                 (book_id, student_id, student_note))
     conn.commit()
     conn.close()
-    flash(f'"{book["title"]}" বইটির জন্য আপনার request সফলভাবে পাঠানো হয়েছে!', 'success')
+    flash(f'"{book["title"]}" বইটির জন্য request পাঠানো হয়েছে!', 'success')
     return redirect(url_for('books'))
 
 
+@app.route('/my-books')
+@student_required
+def my_books():
+    conn = get_db()
+    books_list = conn.execute("""
+        SELECT br.*, b.title as book_title, b.author, b.cover_color, b.genre
+        FROM book_requests br
+        JOIN books b ON br.book_id = b.id
+        WHERE br.student_id = ?
+        ORDER BY br.request_date DESC
+    """, (session['student_id'],)).fetchall()
+    conn.close()
+    return render_template('my_books.html', books=books_list)
+
+
+@app.route('/read-pdf/<int:req_id>')
+@student_required
+def read_pdf(req_id):
+    conn = get_db()
+    req  = conn.execute("""
+        SELECT br.*, b.title as book_title, b.author, b.cover_color
+        FROM book_requests br JOIN books b ON br.book_id = b.id
+        WHERE br.id = ? AND br.student_id = ? AND br.status = 'approved' AND br.pdf_filename IS NOT NULL
+    """, (req_id, session['student_id'])).fetchone()
+    conn.close()
+    if not req:
+        flash('বইটি পাওয়া যায়নি অথবা PDF নেই।', 'error')
+        return redirect(url_for('my_books'))
+    return render_template('read_pdf.html', req=req)
+
+
 # ════════════════════════════════════════════
-#  Admin
+#  Admin Routes
 # ════════════════════════════════════════════
 
 @app.route('/dashboard')
@@ -338,6 +473,7 @@ def dashboard():
     total_books    = conn.execute('SELECT SUM(total_copies) FROM books').fetchone()[0] or 0
     total_titles   = conn.execute('SELECT COUNT(*) FROM books').fetchone()[0]
     total_members  = conn.execute('SELECT COUNT(*) FROM members WHERE active=1').fetchone()[0]
+    total_students = conn.execute('SELECT COUNT(*) FROM students WHERE active=1').fetchone()[0]
     active_borrows = conn.execute("SELECT COUNT(*) FROM borrowings WHERE status='borrowed'").fetchone()[0]
     overdue        = conn.execute("SELECT COUNT(*) FROM borrowings WHERE status='borrowed' AND due_date < date('now')").fetchone()[0]
     pending_reqs   = conn.execute("SELECT COUNT(*) FROM book_requests WHERE status='pending'").fetchone()[0]
@@ -347,24 +483,21 @@ def dashboard():
         FROM borrowings br JOIN books b ON br.book_id=b.id JOIN members m ON br.member_id=m.id
         ORDER BY br.borrow_date DESC LIMIT 5
     """).fetchall()
-
     popular_books = conn.execute("""
         SELECT b.title, b.author, b.cover_color, COUNT(br.id) as borrow_count
         FROM books b LEFT JOIN borrowings br ON b.id=br.book_id
         GROUP BY b.id ORDER BY borrow_count DESC LIMIT 4
     """).fetchall()
-
     recent_requests = conn.execute("""
-        SELECT br.*, b.title as book_title, b.cover_color
-        FROM book_requests br JOIN books b ON br.book_id=b.id
+        SELECT br.*, b.title as book_title, b.cover_color, s.name as student_name
+        FROM book_requests br JOIN books b ON br.book_id=b.id JOIN students s ON br.student_id=s.id
         WHERE br.status='pending' ORDER BY br.request_date DESC LIMIT 5
     """).fetchall()
-
     conn.close()
     return render_template('dashboard.html',
         total_books=total_books, total_titles=total_titles,
-        total_members=total_members, active_borrows=active_borrows,
-        overdue=overdue, pending_reqs=pending_reqs,
+        total_members=total_members, total_students=total_students,
+        active_borrows=active_borrows, overdue=overdue, pending_reqs=pending_reqs,
         recent_activity=recent_activity, popular_books=popular_books,
         recent_requests=recent_requests)
 
@@ -449,12 +582,44 @@ def delete_member(member_id):
     return redirect(url_for('members'))
 
 
+@app.route('/students')
+@admin_required
+def students():
+    search = request.args.get('search', '')
+    conn = get_db()
+    if search:
+        sl = conn.execute('SELECT * FROM students WHERE name LIKE ? OR email LIKE ? ORDER BY reg_date DESC',
+                          (f'%{search}%', f'%{search}%')).fetchall()
+    else:
+        sl = conn.execute('SELECT * FROM students ORDER BY reg_date DESC').fetchall()
+    conn.close()
+    return render_template('students.html', students=sl, search=search)
+
+
+@app.route('/students/toggle/<int:student_id>', methods=['POST'])
+@admin_required
+def toggle_student(student_id):
+    conn = get_db()
+    s = conn.execute('SELECT active FROM students WHERE id=?', (student_id,)).fetchone()
+    if s:
+        new_status = 0 if s['active'] else 1
+        conn.execute('UPDATE students SET active=? WHERE id=?', (new_status, student_id))
+        conn.commit()
+        flash('Student এর অবস্থা পরিবর্তন হয়েছে।', 'info')
+    conn.close()
+    return redirect(url_for('students'))
+
+
 @app.route('/requests')
 @admin_required
 def requests_list():
     status_filter = request.args.get('status', 'pending')
     conn = get_db()
-    query  = 'SELECT br.*, b.title as book_title, b.cover_color, b.author FROM book_requests br JOIN books b ON br.book_id=b.id'
+    query  = '''SELECT br.*, b.title as book_title, b.cover_color, b.author,
+                       s.name as student_name, s.email as student_email, s.phone as student_phone
+                FROM book_requests br
+                JOIN books b ON br.book_id=b.id
+                JOIN students s ON br.student_id=s.id'''
     params = []
     if status_filter != 'all':
         query += ' WHERE br.status=?'
@@ -476,25 +641,22 @@ def approve_request(req_id):
     admin_note   = request.form.get('admin_note', '').strip()
     pdf_file     = request.files.get('pdf_file')
     pdf_filename = None
-
     conn = get_db()
     req  = conn.execute('SELECT * FROM book_requests WHERE id=?', (req_id,)).fetchone()
     if req and req['status'] == 'pending':
         book = conn.execute('SELECT * FROM books WHERE id=?', (req['book_id'],)).fetchone()
         if book:
-            # PDF upload handle
             if pdf_file and pdf_file.filename.lower().endswith('.pdf'):
-                safe_name    = f"req_{req_id}_{req['book_id']}.pdf"
+                safe_name    = f'req_{req_id}_{req["book_id"]}.pdf'
                 pdf_filename = safe_name
                 pdf_file.save(os.path.join('static', 'pdfs', safe_name))
-
             conn.execute(
                 "UPDATE book_requests SET status='approved', admin_note=?, resolved_date=date('now'), pdf_filename=? WHERE id=?",
                 (admin_note, pdf_filename, req_id)
             )
             conn.commit()
             has_pdf = '📄 PDF সহ ' if pdf_filename else ''
-            flash(f'{has_pdf}"{book["title"]}" — {req["student_name"]} এর request অনুমোদন হয়েছে।', 'success')
+            flash(f'{has_pdf}"{book["title"]}" — request অনুমোদন হয়েছে।', 'success')
         else:
             flash('বইটি পাওয়া যাচ্ছে না।', 'error')
     conn.close()
@@ -508,9 +670,10 @@ def reject_request(req_id):
     conn = get_db()
     req  = conn.execute('SELECT * FROM book_requests WHERE id=?', (req_id,)).fetchone()
     if req and req['status'] == 'pending':
-        conn.execute("UPDATE book_requests SET status='rejected', admin_note=?, resolved_date=date('now') WHERE id=?", (admin_note, req_id))
+        conn.execute("UPDATE book_requests SET status='rejected', admin_note=?, resolved_date=date('now') WHERE id=?",
+                     (admin_note, req_id))
         conn.commit()
-        flash(f'{req["student_name"]} এর request বাতিল করা হয়েছে।', 'info')
+        flash('Request বাতিল করা হয়েছে।', 'info')
     conn.close()
     return redirect(request.referrer or url_for('requests_list'))
 
@@ -526,7 +689,8 @@ def borrow():
         due_date  = (datetime.now() + timedelta(days=days)).strftime('%Y-%m-%d')
         book = conn.execute('SELECT * FROM books WHERE id=?', (book_id,)).fetchone()
         if book and book['available_copies'] > 0:
-            conn.execute('INSERT INTO borrowings (book_id, member_id, due_date) VALUES (?,?,?)', (book_id, member_id, due_date))
+            conn.execute('INSERT INTO borrowings (book_id, member_id, due_date) VALUES (?,?,?)',
+                         (book_id, member_id, due_date))
             conn.execute('UPDATE books SET available_copies = available_copies - 1 WHERE id=?', (book_id,))
             conn.commit()
             flash('বই সফলভাবে ইস্যু করা হয়েছে!', 'success')
@@ -534,7 +698,6 @@ def borrow():
             flash('বইটি এই মুহূর্তে পাওয়া যাচ্ছে না!', 'error')
         conn.close()
         return redirect(url_for('borrow'))
-
     books_list   = conn.execute('SELECT * FROM books WHERE available_copies > 0 ORDER BY title').fetchall()
     members_list = conn.execute('SELECT * FROM members WHERE active=1 ORDER BY name').fetchall()
     borrowings   = conn.execute("""
@@ -565,8 +728,9 @@ def return_book(borrow_id):
 def issued_books():
     conn = get_db()
     approved_reqs = conn.execute("""
-        SELECT br.*, b.title as book_title, b.author, b.cover_color
-        FROM book_requests br JOIN books b ON br.book_id=b.id
+        SELECT br.*, b.title as book_title, b.author, b.cover_color,
+               s.name as student_name, s.phone as student_phone
+        FROM book_requests br JOIN books b ON br.book_id=b.id JOIN students s ON br.student_id=s.id
         WHERE br.status='approved' ORDER BY br.resolved_date DESC
     """).fetchall()
     borrowings = conn.execute("""
@@ -577,91 +741,6 @@ def issued_books():
     """).fetchall()
     conn.close()
     return render_template('issued_books.html', approved_reqs=approved_reqs, borrowings=borrowings)
-
-
-@app.route('/change-password', methods=['GET', 'POST'])
-@admin_required
-def change_password():
-    if request.method == 'POST':
-        current  = request.form.get('current_password', '').strip()
-        new_pw   = request.form.get('new_password', '').strip()
-        confirm  = request.form.get('confirm_password', '').strip()
-
-        s = get_settings()
-        is_super = session.get('is_super')
-
-        # যার পাসওয়ার্ড change হবে তার current password check
-        if is_super:
-            correct = s.get('super_password')
-            pw_key  = 'super_password'
-        else:
-            correct = s.get('admin_password')
-            pw_key  = 'admin_password'
-
-        if current != correct:
-            flash('বর্তমান পাসওয়ার্ড সঠিক নয়!', 'error')
-            return redirect(url_for('change_password'))
-
-        if len(new_pw) < 6:
-            flash('নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।', 'error')
-            return redirect(url_for('change_password'))
-
-        if new_pw != confirm:
-            flash('নতুন পাসওয়ার্ড দুটো মিলছে না!', 'error')
-            return redirect(url_for('change_password'))
-
-        conn = get_db()
-        conn.execute('UPDATE settings SET value=? WHERE key=?', (new_pw, pw_key))
-        conn.commit()
-        conn.close()
-
-        flash('পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! আবার লগইন করুন।', 'success')
-        session.clear()
-        return redirect(url_for('login'))
-
-    return render_template('change_password.html')
-
-
-# ════════════════════════════════════════════
-#  Student — আমার অনুমোদিত বই (PDF পড়া)
-# ════════════════════════════════════════════
-
-@app.route('/my-books', methods=['GET', 'POST'])
-def my_books():
-    books_found = None
-    student_name = ''
-
-    if request.method == 'POST':
-        student_name = request.form.get('student_name', '').strip()
-        if student_name:
-            conn = get_db()
-            books_found = conn.execute("""
-                SELECT br.*, b.title as book_title, b.author, b.cover_color, b.genre
-                FROM book_requests br
-                JOIN books b ON br.book_id = b.id
-                WHERE br.student_name = ? AND br.status = 'approved'
-                ORDER BY br.resolved_date DESC
-            """, (student_name,)).fetchall()
-            conn.close()
-
-    return render_template('my_books.html', books=books_found, student_name=student_name)
-
-
-@app.route('/read-pdf/<int:req_id>')
-def read_pdf(req_id):
-    conn = get_db()
-    req  = conn.execute("""
-        SELECT br.*, b.title as book_title, b.author, b.cover_color
-        FROM book_requests br JOIN books b ON br.book_id = b.id
-        WHERE br.id = ? AND br.status = 'approved' AND br.pdf_filename IS NOT NULL
-    """, (req_id,)).fetchone()
-    conn.close()
-
-    if not req:
-        flash('বইটি পাওয়া যায়নি অথবা PDF নেই।', 'error')
-        return redirect(url_for('my_books'))
-
-    return render_template('read_pdf.html', req=req)
 
 
 if __name__ == '__main__':

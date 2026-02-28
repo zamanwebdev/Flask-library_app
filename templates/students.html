@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Student তালিকা{% endblock %}
+{% block topbar_title %}Registered Students{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4 page-header">
+    <div><h1>Student তালিকা</h1><p class="text-muted mb-0">Registered সকল student</p></div>
+    <span class="badge bg-warning bg-opacity-15 text-warning" style="font-size:.85rem;padding:.5rem 1rem">
+        মোট {{ students|length }} জন
+    </span>
+</div>
+
+<div class="card content-card">
+    <div class="card-header">
+        <form method="GET" class="d-flex gap-2">
+            <div class="input-group" style="max-width:320px">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0"
+                       placeholder="নাম বা ইমেইল..." value="{{ search }}">
+            </div>
+            <button type="submit" class="btn btn-dark">খুঁজুন</button>
+            {% if search %}
+            <a href="{{ url_for('students') }}" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student</th>
+                        <th>ফোন</th>
+                        <th>Registration তারিখ</th>
+                        <th class="text-center">Requests</th>
+                        <th class="text-center">অবস্থা</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="member-av flex-shrink-0"
+                                     style="background:hsl({{ loop.index*67 }},60%,88%);color:hsl({{ loop.index*67 }},50%,35%);width:36px;height:36px">
+                                    {{ s.name[0].upper() }}
+                                </div>
+                                <div>
+                                    <div class="fw-semibold">{{ s.name }}</div>
+                                    <div class="text-muted small">{{ s.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-muted small">{{ s.phone or '—' }}</td>
+                        <td class="text-muted small">{{ s.reg_date[:10] }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-primary bg-opacity-10 text-primary">
+                                — <!-- request count can be added -->
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            {% if s.active %}
+                            <span class="badge bg-success bg-opacity-15 text-success">সক্রিয়</span>
+                            {% else %}
+                            <span class="badge bg-danger bg-opacity-15 text-danger">নিষ্ক্রিয়</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('toggle_student', student_id=s.id) }}">
+                                <button type="submit" class="btn btn-sm {% if s.active %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
+                                        onclick="return confirm('এই student এর অবস্থা পরিবর্তন করবেন?')">
+                                    {% if s.active %}<i class="bi bi-slash-circle"></i>{% else %}<i class="bi bi-check-circle"></i>{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-people" style="font-size:2rem;opacity:.2;display:block;margin-bottom:.5rem"></i>
+                            কোনো student পাওয়া যায়নি
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

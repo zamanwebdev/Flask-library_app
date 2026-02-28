@@ -6,9 +6,13 @@
 <div class="d-flex justify-content-between align-items-start mb-4 page-header">
     <div><h1>বইয়ের সংগ্রহ</h1><p class="text-muted mb-0">গ্রন্থাগারের সকল বই</p></div>
     <div class="d-flex gap-2">
-        {% if not session.get('is_admin') %}
-        <a href="{{ url_for('my_books') }}" class="btn btn-outline-primary">
-            <i class="bi bi-book-half me-2"></i>আমার অনুমোদিত বই
+        {% if session.get('student_logged_in') %}
+        <a href="{{ url_for('my_books') }}" class="btn btn-outline-success">
+            <i class="bi bi-bookmark-fill me-2"></i>আমার বই
+        </a>
+        {% elif not session.get('is_admin') %}
+        <a href="{{ url_for('student_login') }}" class="btn btn-outline-success">
+            <i class="bi bi-mortarboard me-2"></i>Login করুন
         </a>
         {% endif %}
         {% if session.get('is_admin') %}
@@ -142,15 +146,21 @@
                                 {% endif %}
 
                             {% else %}
-                                {# ─── Guest/Student view: request বাটন ─── #}
+                                {# ─── Student/Guest view ─── #}
                                 {% if book.available_copies > 0 %}
-                                <button class="btn btn-sm btn-outline-primary"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#requestModal"
-                                        data-book-id="{{ book.id }}"
-                                        data-book-title="{{ book.title }}">
-                                    <i class="bi bi-send me-1"></i>Request করুন
-                                </button>
+                                    {% if session.get('student_logged_in') %}
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#requestModal"
+                                            data-book-id="{{ book.id }}"
+                                            data-book-title="{{ book.title }}">
+                                        <i class="bi bi-send me-1"></i>Request করুন
+                                    </button>
+                                    {% else %}
+                                    <a href="{{ url_for('student_login') }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-lock me-1"></i>Login করুন
+                                    </a>
+                                    {% endif %}
                                 {% else %}
                                 <span class="text-muted small">পাওয়া যাচ্ছে না</span>
                                 {% endif %}
@@ -198,13 +208,9 @@
             </div>
             <form method="POST" id="requestForm" action="">
                 <div class="modal-body px-4 py-3">
-                    <div class="mb-3">
-                        <label class="form-label">আপনার নাম <span class="text-danger">*</span></label>
-                        <input type="text" name="student_name" class="form-control" placeholder="যেমন: মোহাম্মদ রহিম" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">ফোন নম্বর</label>
-                        <input type="text" name="student_phone" class="form-control" placeholder="01X-XXXXXXXX">
+                    <div class="p-3 rounded-2 mb-3" style="background:#f0fdf4;border:1px solid #86efac">
+                        <i class="bi bi-person-check-fill text-success me-2"></i>
+                        <strong>{{ session.get('student_name') }}</strong> হিসেবে request করছেন
                     </div>
                     <div class="mb-1">
                         <label class="form-label">বিশেষ নোট (ঐচ্ছিক)</label>
@@ -227,9 +233,8 @@ document.getElementById('requestModal').addEventListener('show.bs.modal', functi
     const btn = e.relatedTarget;
     document.getElementById('modalBookName').textContent = '📖 ' + btn.getAttribute('data-book-title');
     document.getElementById('requestForm').action = '/request-book/' + btn.getAttribute('data-book-id');
-    this.querySelector('[name="student_name"]').value  = '';
-    this.querySelector('[name="student_phone"]').value = '';
-    this.querySelector('[name="student_note"]').value  = '';
+    const nt = this.querySelector('[name="student_note"]');
+    if (nt) nt.value = '';
 });
 </script>
 {% endblock %}

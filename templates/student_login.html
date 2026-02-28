@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Student Login{% endblock %}
+{% block topbar_title %}Student Login{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+<div class="col-md-5 col-lg-4">
+
+<div class="text-center mb-4">
+    <div style="width:56px;height:56px;background:var(--gold);border-radius:14px;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🎓</div>
+    <h2 style="font-family:'Playfair Display',serif;font-weight:900">Student Login</h2>
+    <p class="text-muted">আপনার account এ প্রবেশ করুন</p>
+</div>
+
+<div class="card content-card">
+    <div class="card-body p-4">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">ইমেইল <span class="text-danger">*</span></label>
+                <input type="email" name="email" class="form-control" placeholder="example@gmail.com" required autofocus>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">পাসওয়ার্ড <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <input type="password" name="password" id="pw" class="form-control" placeholder="••••••••" required>
+                    <button class="btn btn-outline-secondary" type="button"
+                            onclick="const i=document.getElementById('pw');i.type=i.type==='password'?'text':'password';this.innerHTML=i.type==='password'?'<i class=\'bi bi-eye\'></i>':'<i class=\'bi bi-eye-slash\'></i>'">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-gold w-100 py-2">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Login করুন
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="text-center mt-3 text-muted small">
+    নতুন student?
+    <a href="{{ url_for('student_register') }}" style="color:var(--gold);font-weight:600">Register করুন</a>
+</div>
+
+</div>
+</div>
+{% endblock %}

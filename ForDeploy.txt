@@ -1,0 +1,2 @@
+Step 1 => py -m pip freeze > requirements.txt
+Step 2 => echo web: gunicorn app:app > Procfile

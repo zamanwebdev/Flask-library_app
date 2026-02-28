@@ -69,9 +69,13 @@
         {% endif %}
         <div class="nav-section mt-2">সংগ্রহ</div>
         <a href="{{ url_for('books') }}" class="nav-link {% if request.endpoint=='books' %}active{% endif %}"><i class="bi bi-book-fill"></i> বইসমূহ</a>
+        {% if session.get('student_logged_in') %}
+        <a href="{{ url_for('my_books') }}" class="nav-link {% if request.endpoint=='my_books' %}active{% endif %}"><i class="bi bi-bookmark-fill"></i> আমার বই</a>
+        {% endif %}
         {% if session.get("is_admin") %}
         <a href="{{ url_for('add_book') }}" class="nav-link {% if request.endpoint=='add_book' %}active{% endif %}"><i class="bi bi-plus-circle-fill"></i> নতুন বই যোগ</a>
         <div class="nav-section mt-2">সদস্যপদ</div>
+        <a href="{{ url_for('students') }}" class="nav-link {% if request.endpoint=='students' %}active{% endif %}"><i class="bi bi-mortarboard-fill"></i> Students</a>
         <a href="{{ url_for('members') }}" class="nav-link {% if request.endpoint=='members' %}active{% endif %}"><i class="bi bi-people-fill"></i> সদস্যগণ</a>
         <a href="{{ url_for('add_member') }}" class="nav-link {% if request.endpoint=='add_member' %}active{% endif %}"><i class="bi bi-person-plus-fill"></i> নতুন সদস্য</a>
         <div class="nav-section mt-2">লেনদেন</div>
@@ -143,10 +147,43 @@
                         </li>
                     </ul>
                 </div>
+            {% elif session.get('student_logged_in') %}
+                <!-- Student dropdown -->
+                <span class="badge bg-success bg-opacity-15 text-success">STUDENT</span>
+                <div class="dropdown">
+                    <button class="topbar-av border-0 dropdown-toggle"
+                            style="cursor:pointer;background:#2ecc71;color:#fff"
+                            data-bs-toggle="dropdown">
+                        {{ session.get('student_name', 'S')[0].upper() }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width:200px;border-radius:12px;border:1px solid #e2e8f0;padding:6px">
+                        <li>
+                            <div class="px-3 py-2">
+                                <div class="fw-bold" style="font-size:.85rem">{{ session.get('student_name') }}</div>
+                                <div class="text-muted" style="font-size:.75rem">{{ session.get('student_email') }}</div>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="{{ url_for('my_books') }}">
+                                <i class="bi bi-bookmark-fill" style="color:var(--gold)"></i>আমার বই
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-danger" href="{{ url_for('student_logout') }}">
+                                <i class="bi bi-box-arrow-right"></i>লগআউট
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             {% else %}
-            <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem">
-                <i class="bi bi-box-arrow-in-right me-1"></i>Admin লগইন
-            </a>
+                <a href="{{ url_for('student_login') }}" class="btn btn-sm btn-outline-success" style="font-size:.75rem">
+                    <i class="bi bi-mortarboard me-1"></i>Student Login
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Admin
+                </a>
             {% endif %}
         </div>
     </div>
