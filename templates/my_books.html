@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}আমার অনুমোদিত বই{% endblock %}
+{% block topbar_title %}আমার অনুমোদিত বই{% endblock %}
+{% block content %}
+
+<div class="page-header mb-4">
+    <h1>আমার অনুমোদিত বই</h1>
+    <p class="text-muted">আপনার নাম দিয়ে খুঁজুন — approved বই গুলো online পড়তে পারবেন</p>
+</div>
+
+<!-- Search form -->
+<div class="card content-card mb-4" style="max-width:480px">
+    <div class="card-body p-4">
+        <form method="POST">
+            <label class="form-label">আপনার নাম লিখুন</label>
+            <div class="input-group">
+                <input type="text" name="student_name" class="form-control"
+                       placeholder="যেমন: Karim Ahmed"
+                       value="{{ student_name }}" required autofocus>
+                <button type="submit" class="btn btn-gold px-4">
+                    <i class="bi bi-search me-1"></i>খুঁজুন
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if books is not none %}
+    {% if books %}
+    <div class="row g-3">
+        {% for book in books %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card content-card h-100">
+                <!-- Cover strip -->
+                <div style="height:8px;background:{{ book.cover_color }};border-radius:14px 14px 0 0"></div>
+                <div class="card-body p-4">
+                    <div class="d-flex gap-3 mb-3">
+                        <div class="book-cover-sm flex-shrink-0"
+                             style="background:{{ book.cover_color }};width:48px;height:64px;font-size:1.1rem">
+                            <i class="bi bi-book-fill"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold" style="font-size:.95rem;line-height:1.3">{{ book.book_title }}</div>
+                            <div class="text-muted small">{{ book.author }}</div>
+                            {% if book.genre %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary mt-1">{{ book.genre }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-success bg-opacity-15 text-success">
+                            <i class="bi bi-check-circle me-1"></i>Approved
+                        </span>
+                        <span class="text-muted small">{{ book.resolved_date or '' }}</span>
+                    </div>
+
+                    {% if book.admin_note %}
+                    <div class="p-2 rounded-2 mb-3" style="background:#f8fafc;font-size:.8rem;color:#64748b">
+                        <i class="bi bi-chat-left-text me-1"></i>{{ book.admin_note }}
+                    </div>
+                    {% endif %}
+
+                    {% if book.pdf_filename %}
+                    <!-- PDF available -->
+                    <a href="{{ url_for('read_pdf', req_id=book.id) }}"
+                       class="btn btn-gold w-100">
+                        <i class="bi bi-book-open me-2"></i>Online পড়ুন
+                    </a>
+                    {% else %}
+                    <!-- No PDF -->
+                    <div class="p-3 rounded-2 text-center" style="background:#f8fafc;border:1px dashed #cbd5e1">
+                        <i class="bi bi-hourglass-split text-muted d-block mb-1"></i>
+                        <span class="text-muted small">Library থেকে সংগ্রহ করুন</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- No results -->
+    <div class="card content-card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-search" style="font-size:2.5rem;opacity:.2;display:block;margin-bottom:.75rem"></i>
+            <div class="fw-semibold text-muted mb-1">কোনো approved বই পাওয়া যায়নি</div>
+            <div class="text-muted small">
+                "<strong>{{ student_name }}</strong>" নামে কোনো approved request নেই।<br>
+                নাম সঠিক আছে কিনা যাচাই করুন।
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endif %}
+
+{% endblock %}

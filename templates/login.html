@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>লগইন — BiblioTech</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-wrap {
+            width: 100%;
+            max-width: 420px;
+            padding: 1.5rem;
+        }
+
+        .login-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+        }
+
+        .brand-icon {
+            width: 56px; height: 56px;
+            background: #f59e0b;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
+            margin: 0 auto 1rem;
+        }
+
+        .login-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #0f172a;
+            text-align: center;
+            margin-bottom: .25rem;
+        }
+
+        .login-sub {
+            text-align: center;
+            color: #94a3b8;
+            font-size: .85rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            font-size: .75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: #64748b;
+        }
+
+        .form-control {
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: .65rem .9rem;
+            font-size: .9rem;
+        }
+
+        .form-control:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245,158,11,.12);
+        }
+
+        .input-group-text {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+            color: #94a3b8;
+        }
+
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .input-group:focus-within .input-group-text {
+            border-color: #f59e0b;
+        }
+
+        .btn-login {
+            background: #0f172a;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: .75rem;
+            font-weight: 600;
+            font-size: .95rem;
+            width: 100%;
+            transition: background .2s;
+        }
+
+        .btn-login:hover { background: #1e293b; color: #fff; }
+
+        .guest-link {
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            font-size: .85rem;
+            color: #64748b;
+            text-decoration: none;
+        }
+
+        .guest-link:hover { color: #f59e0b; }
+
+        .hint-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: .75rem 1rem;
+            margin-top: 1.25rem;
+            font-size: .78rem;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        .hint-box strong { color: #475569; }
+    </style>
+</head>
+<body>
+<div class="login-wrap">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+    <div class="alert alert-{% if cat=='success' %}success{% elif cat=='error' %}danger{% else %}info{% endif %} alert-dismissible fade show mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-{% if cat=='success' %}check-circle-fill{% elif cat=='error' %}exclamation-circle-fill{% else %}info-circle-fill{% endif %}"></i>
+        {{ msg }}<button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}{% endif %}{% endwith %}
+
+    <div class="login-card">
+        <div class="brand-icon" style="margin:0 auto 1rem;overflow:hidden">
+        {% if site.logo_type == 'image' %}
+        <img src="{{ site.library_logo }}" style="width:100%%;height:100%%;object-fit:cover;border-radius:14px" alt="logo">
+        {% else %}
+        {{ site.library_logo }}
+        {% endif %}
+    </div>
+        <div class="login-title">{{ site.library_name }}</div>
+        <div class="login-sub">{{ site.library_tagline }}</div>
+
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                    <input type="text" name="username" class="form-control" placeholder="admin" required autofocus>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+            </div>
+            <button type="submit" class="btn-login">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Admin হিসেবে লগইন
+            </button>
+        </form>
+
+        <a href="{{ url_for('books') }}" class="guest-link">
+            <i class="bi bi-eye me-1"></i>লগইন ছাড়া শুধু বইয়ের তালিকা দেখুন →
+        </a>
+
+        <div class="hint-box">
+            <strong>Demo credentials:</strong><br>
+            Username: <strong>admin</strong> &nbsp;|&nbsp; Password: <strong>admin123</strong>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

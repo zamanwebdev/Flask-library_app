@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% block title %}Settings{% endblock %}
+{% block topbar_title %}⚙️ Super Admin Settings{% endblock %}
+{% block content %}
+
+<div class="page-header mb-4">
+    <h1>Library Settings</h1>
+    <p class="text-muted">গ্রন্থাগারের নাম, logo এবং অন্যান্য তথ্য পরিবর্তন করুন</p>
+</div>
+
+<div class="row g-4">
+
+    <!-- Settings Form -->
+    <div class="col-lg-7">
+        <div class="card content-card">
+            <div class="card-header">
+                <i class="bi bi-sliders me-2 text-warning"></i>সাধারণ তথ্য
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data" id="settingsForm">
+
+                    <div class="mb-4">
+                        <label class="form-label">Library এর নাম <span class="text-danger">*</span></label>
+                        <input type="text" name="library_name" class="form-control"
+                               value="{{ site.library_name }}" required
+                               placeholder="যেমন: ঢাকা পাবলিক লাইব্রেরি">
+                        <div class="form-text">Sidebar এবং Login পেজে দেখাবে।</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Tagline / সাবটাইটেল</label>
+                        <input type="text" name="library_tagline" class="form-control"
+                               value="{{ site.library_tagline }}"
+                               placeholder="যেমন: জ্ঞানের আলোয় পথ চলি">
+                        <div class="form-text">Library এর নামের নিচে ছোট করে দেখাবে।</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Footer টেক্সট</label>
+                        <input type="text" name="library_footer" class="form-control"
+                               value="{{ site.library_footer }}"
+                               placeholder="যেমন: ঢাকা সিটি কর্পোরেশন">
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Logo Section -->
+                    <div class="mb-3">
+                        <label class="form-label">Logo এর ধরন</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="logo_type" id="logoEmoji"
+                                       value="emoji" {% if site.logo_type != 'image' %}checked{% endif %}
+                                       onchange="toggleLogoInput()">
+                                <label class="form-check-label" for="logoEmoji">
+                                    <i class="bi bi-emoji-smile me-1"></i>Emoji
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="logo_type" id="logoImage"
+                                       value="image" {% if site.logo_type == 'image' %}checked{% endif %}
+                                       onchange="toggleLogoInput()">
+                                <label class="form-check-label" for="logoImage">
+                                    <i class="bi bi-image me-1"></i>ছবি আপলোড
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emoji input -->
+                    <div id="emojiSection" class="mb-4" {% if site.logo_type == 'image' %}style="display:none"{% endif %}>
+                        <label class="form-label">Emoji Logo</label>
+                        <input type="text" name="library_logo" id="emojiInput" class="form-control"
+                               value="{{ site.library_logo if site.logo_type != 'image' else '📚' }}"
+                               placeholder="📚" style="font-size:1.5rem;width:100px">
+                        <div class="form-text">যেকোনো emoji ব্যবহার করুন — 📚 📖 🏛️ 🎓 🔖</div>
+                        <!-- Emoji suggestions -->
+                        <div class="d-flex gap-2 mt-2 flex-wrap">
+                            {% for em in ['📚','📖','🏛️','🎓','🔖','📝','🏫','📜','🌟','🦁'] %}
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    style="font-size:1.1rem;padding:4px 8px"
+                                    onclick="document.getElementById('emojiInput').value='{{ em }}'">
+                                {{ em }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Image upload -->
+                    <div id="imageSection" class="mb-4" {% if site.logo_type != 'image' %}style="display:none"{% endif %}>
+                        <label class="form-label">Logo ছবি আপলোড করুন</label>
+                        <input type="file" name="logo_file" id="logoFile" class="form-control"
+                               accept=".png,.jpg,.jpeg,.gif,.svg,.webp"
+                               onchange="previewImage(this)">
+                        <div class="form-text">PNG, JPG, SVG, GIF, WEBP — সর্বোচ্চ 2MB</div>
+                        <div id="imagePreview" class="mt-2" style="display:none">
+                            <img id="previewImg" src="" alt="preview"
+                                 style="width:48px;height:48px;object-fit:cover;border-radius:10px;border:2px solid #e2e8f0">
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 pt-2">
+                        <button type="submit" class="btn btn-gold px-4">
+                            <i class="bi bi-check-lg me-2"></i>পরিবর্তন সংরক্ষণ করুন
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">বাতিল</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="col-lg-5">
+        <div class="card content-card mb-4">
+            <div class="card-header"><i class="bi bi-eye me-2 text-warning"></i>Live Preview</div>
+            <div class="card-body p-4">
+                <!-- Sidebar preview -->
+                <div class="rounded-3 p-3 mb-3" style="background:#0f172a">
+                    <div class="d-flex align-items-center gap-2">
+                        <div id="previewIcon"
+                             style="width:42px;height:42px;background:#f59e0b;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0">
+                            {% if site.logo_type == 'image' %}
+                            <img src="{{ site.library_logo }}" style="width:100%;height:100%;object-fit:cover" alt="logo">
+                            {% else %}
+                            <span id="previewEmoji">{{ site.library_logo }}</span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div id="previewName" style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#fff;line-height:1">
+                                {{ site.library_name }}
+                            </div>
+                            <div id="previewTagline" style="font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:#f59e0b">
+                                {{ site.library_tagline }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Login preview -->
+                <div class="rounded-3 p-3 text-center" style="background:#f8fafc;border:1px solid #e2e8f0">
+                    <div id="previewLoginIcon"
+                         style="width:48px;height:48px;background:#f59e0b;border-radius:12px;margin:0 auto .5rem;display:flex;align-items:center;justify-content:center;font-size:1.3rem;overflow:hidden">
+                        {% if site.logo_type == 'image' %}
+                        <img src="{{ site.library_logo }}" style="width:100%;height:100%;object-fit:cover" alt="logo">
+                        {% else %}
+                        <span id="previewLoginEmoji">{{ site.library_logo }}</span>
+                        {% endif %}
+                    </div>
+                    <div id="previewLoginName" style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:#0f172a">
+                        {{ site.library_name }}
+                    </div>
+                    <div id="previewLoginTagline" style="font-size:.8rem;color:#94a3b8">
+                        {{ site.library_tagline }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credentials Info -->
+        <div class="card content-card" style="border:2px solid #f59e0b22">
+            <div class="card-body p-4">
+                <div class="fw-bold mb-3" style="color:#f59e0b"><i class="bi bi-shield-lock-fill me-2"></i>Login Credentials</div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0">
+                            <div class="text-muted small mb-1">Admin</div>
+                            <div class="fw-bold small">admin</div>
+                            <div class="text-muted small">admin123</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded-3" style="background:#fdf8ec;border:1px solid #f59e0b44">
+                            <div class="text-muted small mb-1" style="color:#f59e0b">Super Admin</div>
+                            <div class="fw-bold small">superadmin</div>
+                            <div class="text-muted small">super123</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle emoji/image sections
+function toggleLogoInput() {
+    const isImage = document.getElementById('logoImage').checked;
+    document.getElementById('emojiSection').style.display  = isImage ? 'none' : 'block';
+    document.getElementById('imageSection').style.display  = isImage ? 'block' : 'none';
+}
+
+// Image preview
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+            // Update live preview
+            updatePreviewWithImage(e.target.result);
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function updatePreviewWithImage(src) {
+    const imgHtml = `<img src="${src}" style="width:100%;height:100%;object-fit:cover" alt="logo">`;
+    document.getElementById('previewIcon').innerHTML = imgHtml;
+    document.getElementById('previewLoginIcon').innerHTML = imgHtml;
+}
+
+// Live text preview
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput    = document.querySelector('[name="library_name"]');
+    const taglineInput = document.querySelector('[name="library_tagline"]');
+    const emojiInput   = document.getElementById('emojiInput');
+
+    function updatePreview() {
+        const name    = nameInput.value    || 'Library';
+        const tagline = taglineInput.value || 'System';
+        const emoji   = emojiInput.value   || '📚';
+        const isImage = document.getElementById('logoImage').checked;
+
+        document.getElementById('previewName').textContent       = name;
+        document.getElementById('previewTagline').textContent    = tagline;
+        document.getElementById('previewLoginName').textContent  = name;
+        document.getElementById('previewLoginTagline').textContent = tagline;
+
+        if (!isImage) {
+            if (document.getElementById('previewEmoji'))      document.getElementById('previewEmoji').textContent      = emoji;
+            if (document.getElementById('previewLoginEmoji')) document.getElementById('previewLoginEmoji').textContent = emoji;
+            document.getElementById('previewIcon').innerHTML      = `<span style="font-size:1.2rem">${emoji}</span>`;
+            document.getElementById('previewLoginIcon').innerHTML = `<span style="font-size:1.3rem">${emoji}</span>`;
+        }
+    }
+
+    nameInput.addEventListener('input', updatePreview);
+    taglineInput.addEventListener('input', updatePreview);
+    emojiInput.addEventListener('input', updatePreview);
+});
+</script>
+{% endblock %}

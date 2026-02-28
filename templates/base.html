@@ -44,35 +44,110 @@
         .badge { font-weight:600;font-size:.7rem; }
         .member-av { width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem; }
         .sidebar-footer { margin-top:auto;padding:1rem 1.25rem;border-top:1px solid rgba(255,255,255,.07);font-size:.75rem;color:rgba(255,255,255,.25); }
+        .admin-badge { background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px; }
     </style>
 </head>
 <body>
 <nav id="sidebar">
     <div class="sidebar-brand d-flex align-items-center gap-2 p-3 border-bottom" style="border-color:rgba(255,255,255,.07)!important">
-        <div class="brand-icon">📚</div>
-        <div><div class="brand-name">BiblioTech</div><div class="brand-sub">Library System</div></div>
+        <div class="brand-icon" style="overflow:hidden">
+            {% if site.logo_type == 'image' %}
+            <img src="{{ site.library_logo }}" style="width:100%;height:100%;object-fit:cover;border-radius:10px" alt="logo">
+            {% else %}
+            {{ site.library_logo }}
+            {% endif %}
+        </div>
+        <div>
+            <div class="brand-name">{{ site.library_name }}</div>
+            <div class="brand-sub">{{ site.library_tagline }}</div>
+        </div>
     </div>
     <div class="sidebar-nav flex-grow-1 py-2">
         <div class="nav-section">প্রধান</div>
+        {% if session.get("is_admin") %}
         <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}"><i class="bi bi-grid-fill"></i> ড্যাশবোর্ড</a>
+        {% endif %}
         <div class="nav-section mt-2">সংগ্রহ</div>
         <a href="{{ url_for('books') }}" class="nav-link {% if request.endpoint=='books' %}active{% endif %}"><i class="bi bi-book-fill"></i> বইসমূহ</a>
+        {% if session.get("is_admin") %}
         <a href="{{ url_for('add_book') }}" class="nav-link {% if request.endpoint=='add_book' %}active{% endif %}"><i class="bi bi-plus-circle-fill"></i> নতুন বই যোগ</a>
         <div class="nav-section mt-2">সদস্যপদ</div>
         <a href="{{ url_for('members') }}" class="nav-link {% if request.endpoint=='members' %}active{% endif %}"><i class="bi bi-people-fill"></i> সদস্যগণ</a>
         <a href="{{ url_for('add_member') }}" class="nav-link {% if request.endpoint=='add_member' %}active{% endif %}"><i class="bi bi-person-plus-fill"></i> নতুন সদস্য</a>
         <div class="nav-section mt-2">লেনদেন</div>
         <a href="{{ url_for('borrow') }}" class="nav-link {% if request.endpoint=='borrow' %}active{% endif %}"><i class="bi bi-arrow-left-right"></i> ইস্যু / ফেরত</a>
+        <a href="{{ url_for('issued_books') }}" class="nav-link {% if request.endpoint=='issued_books' %}active{% endif %}"><i class="bi bi-list-check"></i> বিতরণ তালিকা</a>
+        <a href="{{ url_for('requests_list') }}" class="nav-link {% if request.endpoint=='requests_list' %}active{% endif %}"><i class="bi bi-bell-fill"></i> Requests</a>
+        {% endif %}
     </div>
-    <div class="sidebar-footer"><div class="fw-semibold" style="color:rgba(255,255,255,.4)">সিটি পাবলিক লাইব্রেরি</div>২৬ ফেব্রুয়ারি, ২০২৬</div>
+    <div class="sidebar-footer">
+    <div class="fw-semibold" style="color:rgba(255,255,255,.4)">{{ site.library_footer }}</div>
+    <div id="sidebar-date"></div>
+    {% if session.get('is_super') %}
+    <a href="{{ url_for('settings') }}" class="d-block mt-2" style="color:var(--gold);font-size:.75rem;text-decoration:none">
+        <i class="bi bi-gear-fill me-1"></i>Settings
+    </a>
+    {% endif %}
+</div>
 </nav>
 
 <div id="main">
     <div class="topbar">
         <div class="topbar-title">{% block topbar_title %}{% endblock %}</div>
         <div class="d-flex align-items-center gap-3">
-            <span class="text-muted" style="font-size:.8rem"><i class="bi bi-calendar3 me-1" style="color:var(--gold)"></i>Thu, 26 Feb 2026</span>
-            <div class="topbar-av">A</div>
+            <span class="text-muted d-none d-md-inline" style="font-size:.8rem">
+                <i class="bi bi-calendar3 me-1" style="color:var(--gold)"></i><span id="live-date"></span>
+            </span>
+            {% if session.get("is_admin") %}
+                {% if session.get("is_super") %}
+                <span class="admin-badge" style="background:rgba(245,158,11,.25);color:#b45309">SUPER ADMIN</span>
+                {% else %}
+                <span class="admin-badge">ADMIN</span>
+                {% endif %}
+                <!-- User dropdown -->
+                <div class="dropdown">
+                    <button class="topbar-av border-0 dropdown-toggle" style="cursor:pointer"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ session.get("username", "A")[0].upper() }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width:200px;border-radius:12px;border:1px solid #e2e8f0;padding:6px">
+                        <li>
+                            <div class="px-3 py-2">
+                                <div class="fw-bold" style="font-size:.85rem">{{ session.get("username") }}</div>
+                                <div class="text-muted" style="font-size:.75rem">
+                                    {% if session.get("is_super") %}Super Admin{% else %}Admin{% endif %}
+                                </div>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="{{ url_for('change_password') }}">
+                                <i class="bi bi-shield-lock" style="color:var(--gold)"></i>
+                                পাসওয়ার্ড পরিবর্তন
+                            </a>
+                        </li>
+                        {% if session.get("is_super") %}
+                        <li>
+                            <a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="{{ url_for('settings') }}">
+                                <i class="bi bi-gear-fill" style="color:var(--gold)"></i>
+                                Settings
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-danger" href="{{ url_for('logout') }}">
+                                <i class="bi bi-box-arrow-right"></i>
+                                লগআউট
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Admin লগইন
+            </a>
+            {% endif %}
         </div>
     </div>
     <div class="page-body pb-0 pt-3">
@@ -87,5 +162,23 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script>
+(function() {
+    const bn_days   = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
+    const bn_months = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+    function updateDate() {
+        const now  = new Date();
+        const day  = bn_days[now.getDay()];
+        const date = now.getDate();
+        const mon  = bn_months[now.getMonth()];
+        const year = now.getFullYear();
+        document.getElementById('live-date').textContent = day + ', ' + date + ' ' + mon + ' ' + year;
+        const sidebarDate = document.getElementById('sidebar-date');
+        if (sidebarDate) sidebarDate.textContent = date + ' ' + mon + ', ' + year;
+    }
+    updateDate();
+    setInterval(updateDate, 60000);
+})();
+</script>
 </body>
 </html>

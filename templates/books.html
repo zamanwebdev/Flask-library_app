@@ -1,116 +1,235 @@
 {% extends 'base.html' %}
-{% block title %}ইস্যু / ফেরত{% endblock %}
-{% block topbar_title %}বই ইস্যু ও ফেরত{% endblock %}
+{% block title %}বইসমূহ{% endblock %}
+{% block topbar_title %}বইসমূহ{% endblock %}
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-start mb-4 page-header">
-    <div><h1>ইস্যু ও ফেরত</h1><p class="text-muted mb-0">বই ইস্যু করুন এবং ফেরত নিন</p></div>
+    <div><h1>বইয়ের সংগ্রহ</h1><p class="text-muted mb-0">গ্রন্থাগারের সকল বই</p></div>
+    <div class="d-flex gap-2">
+        {% if not session.get('is_admin') %}
+        <a href="{{ url_for('my_books') }}" class="btn btn-outline-primary">
+            <i class="bi bi-book-half me-2"></i>আমার অনুমোদিত বই
+        </a>
+        {% endif %}
+        {% if session.get('is_admin') %}
+        <a href="{{ url_for('add_book') }}" class="btn btn-gold px-4"><i class="bi bi-plus me-2"></i>নতুন বই যোগ</a>
+        {% endif %}
+    </div>
 </div>
 
-<div class="row g-4 mb-4">
-    <!-- Issue Form -->
-    <div class="col-lg-7">
-        <div class="card content-card h-100">
-            <div class="card-header"><i class="bi bi-box-arrow-up me-2 text-warning"></i>বই ইস্যু করুন</div>
-            <div class="card-body p-4">
-                <form method="POST">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label">বই নির্বাচন করুন <span class="text-danger">*</span></label>
-                            <select name="book_id" class="form-select" required>
-                                <option value="">— বই বেছে নিন —</option>
-                                {% for book in books %}
-                                <option value="{{ book.id }}">{{ book.title }} — {{ book.author }} ({{ book.available_copies }} কপি)</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">সদস্য নির্বাচন করুন <span class="text-danger">*</span></label>
-                            <select name="member_id" class="form-select" required>
-                                <option value="">— সদস্য বেছে নিন —</option>
-                                {% for m in members %}
-                                <option value="{{ m.id }}">{{ m.name }} ({{ m.email }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">কতদিনের জন্য (দিন)</label>
-                            <input type="number" name="days" class="form-control" value="14" min="1" max="90">
-                        </div>
-                        <div class="col-12 pt-2">
-                            <button type="submit" class="btn btn-gold px-5"><i class="bi bi-send me-2"></i>বই ইস্যু করুন</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Summary Card -->
-    <div class="col-lg-5">
-        <div class="card h-100 border-0 text-white" style="background:linear-gradient(135deg,#0f172a,#1e293b)">
-            <div class="card-body d-flex flex-column justify-content-center align-items-center text-center p-4">
-                <div style="font-size:3.5rem;margin-bottom:.5rem">📚</div>
-                <div style="font-family:'Playfair Display',serif;font-size:3rem;font-weight:900;color:var(--gold);line-height:1">{{ borrowings|length }}</div>
-                <div class="mt-1 mb-4" style="color:rgba(255,255,255,.6)">বর্তমানে ইস্যুকৃত বই</div>
-                <div class="border-top w-100 pt-3" style="border-color:rgba(255,255,255,.1)!important">
-                    <div class="row text-center">
-                        <div class="col">
-                            <div style="font-size:1.5rem;font-weight:700;color:#fff">{{ books|length }}</div>
-                            <div style="font-size:.75rem;color:rgba(255,255,255,.4)">উপলব্ধ টাইটেল</div>
-                        </div>
-                        <div class="col">
-                            <div style="font-size:1.5rem;font-weight:700;color:var(--gold)">{{ members|length }}</div>
-                            <div style="font-size:.75rem;color:rgba(255,255,255,.4)">মোট সদস্য</div>
-                        </div>
-                    </div>
+<div class="card content-card">
+    <div class="card-header">
+        <form method="GET" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control border-start-0 ps-0"
+                           placeholder="শিরোনাম, লেখক বা ISBN..." value="{{ search }}">
                 </div>
             </div>
-        </div>
+            <div class="col-md-3">
+                <select name="genre" class="form-select">
+                    <option value="">সকল ধরন</option>
+                    {% for g in genres %}
+                    <option value="{{ g.genre }}" {% if selected_genre==g.genre %}selected{% endif %}>{{ g.genre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-dark"><i class="bi bi-funnel me-1"></i>ফিল্টার</button>
+                {% if search or selected_genre %}
+                <a href="{{ url_for('books') }}" class="btn btn-outline-secondary ms-2"><i class="bi bi-x"></i></a>
+                {% endif %}
+            </div>
+        </form>
     </div>
-</div>
 
-<!-- Active Borrowings Table -->
-<div class="card content-card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-list-check me-2 text-warning"></i>সক্রিয় ইস্যু তালিকা</span>
-        <span class="badge bg-warning bg-opacity-15 text-warning">{{ borrowings|length }} টি</span>
-    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table mb-0">
-                <thead><tr><th>বই</th><th>সদস্য</th><th>ইস্যুর তারিখ</th><th>শেষ তারিখ</th><th>অবস্থা</th><th>অ্যাকশন</th></tr></thead>
-                <tbody>
-                    {% for b in borrowings %}
+                <thead>
                     <tr>
+                        <th>বই</th>
+                        <th>ধরন</th>
+                        <th>ISBN</th>
+                        <th class="text-center">মোট</th>
+                        <th class="text-center">পাওয়া যাচ্ছে</th>
+                        <th>অবস্থা</th>
+                        <th>
+                            {% if session.get('is_admin') %}
+                            Requests
+                            {% else %}
+                            আমার Request
+                            {% endif %}
+                        </th>
+                        {% if session.get('is_admin') %}<th></th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in books %}
+                    {% set reqs = pending_requests.get(book.id, []) if session.get('is_admin') else [] %}
+                    <tr>
+                        <!-- বই -->
                         <td>
                             <div class="d-flex align-items-center gap-3">
-                                <div class="book-cover-sm" style="background:{{ b.cover_color }}"><i class="bi bi-book-fill"></i></div>
-                                <span class="fw-semibold">{{ b.title }}</span>
+                                <div class="book-cover-sm" style="background:{{ book.cover_color }}">
+                                    <i class="bi bi-book-fill"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">{{ book.title }}</div>
+                                    <div class="text-muted small">{{ book.author }}</div>
+                                </div>
                             </div>
                         </td>
-                        <td class="fw-medium">{{ b.member_name }}</td>
-                        <td class="text-muted small">{{ b.borrow_date[:10] }}</td>
-                        <td class="fw-semibold small {% if b.due_date < '2026-02-26' %}text-danger{% endif %}">{{ b.due_date }}</td>
+                        <td><span class="badge bg-secondary bg-opacity-10 text-secondary">{{ book.genre or '—' }}</span></td>
+                        <td class="text-muted small font-monospace">{{ book.isbn or '—' }}</td>
+                        <td class="text-center fw-bold">{{ book.total_copies }}</td>
+                        <td class="text-center fw-bold {% if book.available_copies == 0 %}text-danger{% else %}text-success{% endif %}">
+                            {{ book.available_copies }}
+                        </td>
                         <td>
-                            {% if b.due_date < '2026-02-26' %}
-                            <span class="badge bg-danger bg-opacity-15 text-danger"><i class="bi bi-exclamation-triangle me-1"></i>মেয়াদোত্তীর্ণ</span>
+                            {% if book.available_copies > 0 %}
+                            <span class="badge bg-success bg-opacity-15 text-success">পাওয়া যাচ্ছে</span>
                             {% else %}
-                            <span class="badge bg-warning bg-opacity-15 text-warning">ইস্যুকৃত</span>
+                            <span class="badge bg-danger bg-opacity-15 text-danger">স্টকে নেই</span>
                             {% endif %}
                         </td>
+
+                        <!-- Request কলাম -->
+                        <td style="min-width:220px">
+                            {% if session.get('is_admin') %}
+                                {# ─── Admin view: requester names + approve/reject ─── #}
+                                {% if reqs %}
+                                <div class="d-flex flex-column gap-1">
+                                    {% for req in reqs %}
+                                    <div class="d-flex align-items-center gap-2 p-2 rounded-3"
+                                         style="background:#f8fafc;border:1px solid #e2e8f0">
+                                        <!-- Avatar + নাম -->
+                                        <div class="member-av flex-shrink-0"
+                                             style="width:26px;height:26px;font-size:.7rem;background:#e0e7ff;color:#4338ca">
+                                            {{ req.student_name[0].upper() }}
+                                        </div>
+                                        <div class="flex-grow-1 overflow-hidden">
+                                            <div class="fw-semibold text-truncate" style="font-size:.78rem">{{ req.student_name }}</div>
+                                            {% if req.student_phone %}
+                                            <div class="text-muted" style="font-size:.7rem">{{ req.student_phone }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <!-- Quick approve/reject -->
+                                        <div class="d-flex gap-1 flex-shrink-0">
+                                            <form method="POST" action="{{ url_for('approve_request', req_id=req.id) }}">
+                                                <input type="hidden" name="admin_note" value="">
+                                                <button type="submit" class="btn btn-success btn-sm py-0 px-2"
+                                                        title="Approve" style="font-size:.75rem"
+                                                        onclick="return confirm('{{ req.student_name }} এর request approve করবেন?')">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('reject_request', req_id=req.id) }}">
+                                                <input type="hidden" name="admin_note" value="">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2"
+                                                        title="Reject" style="font-size:.75rem"
+                                                        onclick="return confirm('{{ req.student_name }} এর request reject করবেন?')">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted small">—</span>
+                                {% endif %}
+
+                            {% else %}
+                                {# ─── Guest/Student view: request বাটন ─── #}
+                                {% if book.available_copies > 0 %}
+                                <button class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#requestModal"
+                                        data-book-id="{{ book.id }}"
+                                        data-book-title="{{ book.title }}">
+                                    <i class="bi bi-send me-1"></i>Request করুন
+                                </button>
+                                {% else %}
+                                <span class="text-muted small">পাওয়া যাচ্ছে না</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+
+                        <!-- Admin: Delete -->
+                        {% if session.get('is_admin') %}
                         <td>
-                            <form method="POST" action="{{ url_for('return_book', borrow_id=b.id) }}" onsubmit="return confirm('বইটি ফেরত নেবেন?')">
-                                <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-arrow-return-left me-1"></i>ফেরত নিন</button>
+                            <form method="POST" action="{{ url_for('delete_book', book_id=book.id) }}"
+                                  onsubmit="return confirm('এই বইটি মুছে ফেলবেন?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </form>
                         </td>
+                        {% endif %}
                     </tr>
                     {% else %}
-                    <tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-check-circle" style="font-size:2rem;color:#2ECC71;opacity:.4;display:block;margin-bottom:.5rem"></i>কোনো বই বর্তমানে ইস্যু নেই</td></tr>
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-book" style="font-size:2rem;opacity:.2;display:block;margin-bottom:.5rem"></i>
+                            কোনো বই পাওয়া যায়নি
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+    <div class="card-footer text-muted small">মোট {{ books|length }} টি বই</div>
 </div>
+
+
+<!-- Student Request Modal -->
+<div class="modal fade" id="requestModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px;border:none;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                <div>
+                    <h5 class="modal-title fw-bold" style="font-family:'Playfair Display',serif">বই Request করুন</h5>
+                    <p class="text-muted small mb-0" id="modalBookName"></p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="requestForm" action="">
+                <div class="modal-body px-4 py-3">
+                    <div class="mb-3">
+                        <label class="form-label">আপনার নাম <span class="text-danger">*</span></label>
+                        <input type="text" name="student_name" class="form-control" placeholder="যেমন: মোহাম্মদ রহিম" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ফোন নম্বর</label>
+                        <input type="text" name="student_phone" class="form-control" placeholder="01X-XXXXXXXX">
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label">বিশেষ নোট (ঐচ্ছিক)</label>
+                        <textarea name="student_note" class="form-control" rows="2" placeholder="কতদিনের জন্য লাগবে..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 pt-1">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">বাতিল</button>
+                    <button type="submit" class="btn btn-gold px-4">
+                        <i class="bi bi-send me-2"></i>Request পাঠান
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('requestModal').addEventListener('show.bs.modal', function(e) {
+    const btn = e.relatedTarget;
+    document.getElementById('modalBookName').textContent = '📖 ' + btn.getAttribute('data-book-title');
+    document.getElementById('requestForm').action = '/request-book/' + btn.getAttribute('data-book-id');
+    this.querySelector('[name="student_name"]').value  = '';
+    this.querySelector('[name="student_phone"]').value = '';
+    this.querySelector('[name="student_note"]').value  = '';
+});
+</script>
 {% endblock %}

@@ -58,6 +58,18 @@
             </div>
         </div>
     </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card h-100">
+            <div class="card-body p-4">
+                <div class="stat-icon-box bg-info bg-opacity-10 text-info mb-3"><i class="bi bi-bell-fill"></i></div>
+                <div class="stat-val">{{ pending_reqs }}</div>
+                <div class="text-muted mt-1" style="font-size:.8rem">Pending Requests</div>
+            </div>
+            <div class="card-footer border-0 bg-transparent pb-3 px-4">
+                <div class="progress" style="height:4px"><div class="progress-bar bg-info" style="width:{% if pending_reqs > 0 %}70{% else %}0{% endif %}%"></div></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Bottom Row -->
@@ -132,4 +144,45 @@
         </div>
     </div>
 </div>
+
+<!-- Recent Pending Requests -->
+{% if recent_requests %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card content-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bell-fill me-2 text-warning"></i>সাম্প্রতিক Pending Requests</span>
+                <a href="{{ url_for('requests_list') }}" class="btn btn-sm btn-outline-secondary">সব দেখুন</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead><tr><th>বই</th><th>Student</th><th>ফোন</th><th>তারিখ</th><th>অ্যাকশন</th></tr></thead>
+                        <tbody>
+                            {% for req in recent_requests %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="book-cover-sm" style="background:{{ req.cover_color }}"><i class="bi bi-book-fill"></i></div>
+                                        <span class="fw-semibold small">{{ req.book_title }}</span>
+                                    </div>
+                                </td>
+                                <td class="fw-medium small">{{ req.student_name }}</td>
+                                <td class="text-muted small">{{ req.student_phone or '—' }}</td>
+                                <td class="text-muted small">{{ req.request_date[:10] }}</td>
+                                <td>
+                                    <a href="{{ url_for('requests_list') }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-arrow-right"></i> দেখুন
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block title %}কে কোন বই নিয়েছে{% endblock %}
+{% block topbar_title %}কে কোন বই নিয়েছে{% endblock %}
+{% block content %}
+
+<div class="page-header mb-4">
+    <h1>বই বিতরণ তালিকা</h1>
+    <p class="text-muted">কোন student / সদস্য কোন বই নিয়েছে তার সম্পূর্ণ তালিকা</p>
+</div>
+
+<!-- Summary strip -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="card content-card">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="stat-icon-box bg-primary bg-opacity-10 text-primary"><i class="bi bi-person-check-fill"></i></div>
+                <div>
+                    <div class="stat-val" style="font-size:1.6rem">{{ borrowings|selectattr('status','equalto','borrowed')|list|length }}</div>
+                    <div class="text-muted small">এখনো ফেরত দেয়নি (Member)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card content-card">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="stat-icon-box bg-warning bg-opacity-10 text-warning"><i class="bi bi-bell-fill"></i></div>
+                <div>
+                    <div class="stat-val" style="font-size:1.6rem">{{ approved_reqs|length }}</div>
+                    <div class="text-muted small">Approved Requests (Student)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card content-card">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="stat-icon-box bg-success bg-opacity-10 text-success"><i class="bi bi-check2-all"></i></div>
+                <div>
+                    <div class="stat-val" style="font-size:1.6rem">{{ borrowings|selectattr('status','equalto','returned')|list|length }}</div>
+                    <div class="text-muted small">ফেরত দিয়েছে</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══ Section 1: Student Requests (Approved) ══ -->
+<div class="card content-card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-mortarboard-fill me-2 text-warning"></i>Student Requests — Approved তালিকা</span>
+        <span class="badge bg-warning bg-opacity-15 text-warning">{{ approved_reqs|length }} জন</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:40px">#</th>
+                        <th>বই</th>
+                        <th>Student এর নাম</th>
+                        <th>ফোন</th>
+                        <th>Request তারিখ</th>
+                        <th>Approve তারিখ</th>
+                        <th>নোট</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in approved_reqs %}
+                    <tr>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="book-cover-sm" style="background:{{ req.cover_color }}">
+                                    <i class="bi bi-book-fill"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold" style="font-size:.88rem">{{ req.book_title }}</div>
+                                    <div class="text-muted small">{{ req.author }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="member-av flex-shrink-0"
+                                     style="background:hsl({{ loop.index * 73 }},60%,88%);color:hsl({{ loop.index * 73 }},50%,35%);width:30px;height:30px;font-size:.75rem">
+                                    {{ req.student_name[0].upper() }}
+                                </div>
+                                <span class="fw-semibold small">{{ req.student_name }}</span>
+                            </div>
+                        </td>
+                        <td class="text-muted small">{{ req.student_phone or '—' }}</td>
+                        <td class="text-muted small">{{ req.request_date[:10] }}</td>
+                        <td class="text-muted small">{{ req.resolved_date or '—' }}</td>
+                        <td class="text-muted small" style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                            {{ req.admin_note or req.student_note or '—' }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox" style="font-size:1.5rem;opacity:.3;display:block;margin-bottom:.4rem"></i>
+                            কোনো approved request নেই
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══ Section 2: Member Borrowings ══ -->
+<div class="card content-card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-people-fill me-2 text-warning"></i>Member Borrowings — ইস্যু তালিকা</span>
+        <div class="d-flex gap-2">
+            <span class="badge bg-warning bg-opacity-15 text-warning">
+                {{ borrowings|selectattr('status','equalto','borrowed')|list|length }} সক্রিয়
+            </span>
+            <span class="badge bg-success bg-opacity-15 text-success">
+                {{ borrowings|selectattr('status','equalto','returned')|list|length }} ফেরত
+            </span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:40px">#</th>
+                        <th>বই</th>
+                        <th>সদস্যের নাম</th>
+                        <th>ফোন</th>
+                        <th>ইস্যুর তারিখ</th>
+                        <th>শেষ তারিখ</th>
+                        <th>ফেরতের তারিখ</th>
+                        <th>অবস্থা</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bw in borrowings %}
+                    <tr class="{% if bw.status == 'borrowed' and bw.due_date < '2026-02-26' %}table-danger{% endif %}">
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="book-cover-sm" style="background:{{ bw.cover_color }}">
+                                    <i class="bi bi-book-fill"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold" style="font-size:.88rem">{{ bw.book_title }}</div>
+                                    <div class="text-muted small">{{ bw.author }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="member-av flex-shrink-0"
+                                     style="background:hsl({{ loop.index * 57 }},60%,88%);color:hsl({{ loop.index * 57 }},50%,35%);width:30px;height:30px;font-size:.75rem">
+                                    {{ bw.member_name[0].upper() }}
+                                </div>
+                                <div>
+                                    <div class="fw-semibold small">{{ bw.member_name }}</div>
+                                    <div class="text-muted" style="font-size:.7rem">{{ bw.member_email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-muted small">{{ bw.member_phone or '—' }}</td>
+                        <td class="text-muted small">{{ bw.borrow_date[:10] }}</td>
+                        <td class="small fw-semibold {% if bw.status == 'borrowed' and bw.due_date < '2026-02-26' %}text-danger{% endif %}">
+                            {{ bw.due_date }}
+                        </td>
+                        <td class="text-muted small">{{ bw.return_date or '—' }}</td>
+                        <td>
+                            {% if bw.status == 'returned' %}
+                            <span class="badge bg-success bg-opacity-15 text-success">
+                                <i class="bi bi-check-circle me-1"></i>ফেরত
+                            </span>
+                            {% elif bw.due_date < '2026-02-26' %}
+                            <span class="badge bg-danger bg-opacity-15 text-danger">
+                                <i class="bi bi-exclamation-triangle me-1"></i>মেয়াদোত্তীর্ণ
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning bg-opacity-15 text-warning">
+                                <i class="bi bi-book-half me-1"></i>ইস্যুকৃত
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox" style="font-size:1.5rem;opacity:.3;display:block;margin-bottom:.4rem"></i>
+                            কোনো borrowing নেই
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
