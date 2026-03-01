@@ -1,118 +1,87 @@
-{% extends 'base.html' %}
-{% block title %}Student Registration{% endblock %}
-{% block topbar_title %}Student Registration{% endblock %}
-{% block content %}
-
-<div class="row justify-content-center">
-<div class="col-md-6 col-lg-5">
-
-<div class="text-center mb-4">
-    <div style="width:56px;height:56px;background:var(--gold);border-radius:14px;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🎓</div>
-    <h2 style="font-family:'Playfair Display',serif;font-weight:900">Student Registration</h2>
-    <p class="text-muted">নতুন account তৈরি করুন</p>
-</div>
-
-<div class="card content-card">
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration — {{ site.library_name }}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root{--gold:#f59e0b;}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+        .card{border:none;border-radius:20px;box-shadow:0 25px 60px rgba(0,0,0,.35);width:100%;max-width:460px;overflow:hidden;}
+        .card-top{background:#312e81;padding:1.75rem 2rem 1.5rem;text-align:center;}
+        .logo-box{width:52px;height:52px;background:var(--gold);border-radius:13px;margin:0 auto .875rem;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+        .form-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:.3rem;}
+        .form-control{border:1.5px solid #e2e8f0;border-radius:10px;font-size:.875rem;padding:.6rem .875rem;}
+        .form-control:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12);outline:none;}
+        .btn-reg{background:#6366f1;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:.95rem;padding:.75rem;width:100%;}
+        .btn-reg:hover{background:#4f46e5;color:#fff;}
+        .btn-reg:disabled{opacity:.6;cursor:not-allowed;}
+        .link-gold{color:var(--gold);font-weight:600;text-decoration:none;}
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="card-top">
+        <div class="logo-box">🎓</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;color:#fff;margin:0">Student Registration</h2>
+        <p style="color:rgba(255,255,255,.55);font-size:.78rem;margin:.4rem 0 0">{{ site.library_name }}</p>
+    </div>
     <div class="card-body p-4">
-        <form method="POST" id="regForm">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+        <div class="alert alert-{% if cat=='error' %}danger{% elif cat=='success' %}success{% else %}info{% endif %} d-flex align-items-center gap-2 py-2 mb-3" style="font-size:.85rem;border-radius:10px">
+            <i class="bi bi-{% if cat=='error' %}exclamation-circle-fill{% else %}check-circle-fill{% endif %} flex-shrink-0"></i><span>{{ msg }}</span>
+        </div>
+        {% endfor %}{% endif %}{% endwith %}
 
-            <div class="mb-3">
-                <label class="form-label">পূর্ণ নাম <span class="text-danger">*</span></label>
-                <input type="text" name="name" class="form-control" placeholder="যেমন: Karim Ahmed" required autofocus>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">ইমেইল <span class="text-danger">*</span></label>
-                <input type="email" name="email" class="form-control" placeholder="example@gmail.com" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">ফোন নম্বর</label>
-                <input type="text" name="phone" class="form-control" placeholder="01X-XXXXXXXX">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">পাসওয়ার্ড <span class="text-danger">*</span></label>
-                <div class="input-group">
-                    <input type="password" name="password" id="pw1" class="form-control"
-                           placeholder="কমপক্ষে ৬ অক্ষর" required oninput="checkStrength(this.value);checkMatch()">
-                    <button class="btn btn-outline-secondary" type="button" onclick="togglePw('pw1',this)">
-                        <i class="bi bi-eye"></i>
-                    </button>
+        <form method="POST">
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">পূর্ণ নাম <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" placeholder="যেমন: Karim Ahmed" required autofocus>
                 </div>
-                <div class="mt-1">
-                    <div class="progress" style="height:4px;border-radius:4px">
-                        <div id="sBar" class="progress-bar" style="width:0%;transition:all .3s"></div>
+                <div class="col-12">
+                    <label class="form-label">ইমেইল <span class="text-danger">*</span></label>
+                    <input type="email" name="email" class="form-control" placeholder="example@gmail.com" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">ফোন নম্বর</label>
+                    <input type="text" name="phone" class="form-control" placeholder="01X-XXXXXXXX">
+                </div>
+                <div class="col-12 col-sm-6">
+                    <label class="form-label">পাসওয়ার্ড <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password" name="password" id="pw1" class="form-control" placeholder="কমপক্ষে ৬ অক্ষর" required oninput="chkStr(this.value);chkMatch()">
+                        <button class="btn btn-outline-secondary" type="button" style="border-radius:0 10px 10px 0;border:1.5px solid #e2e8f0;border-left:none" onclick="tgl('pw1',this)"><i class="bi bi-eye"></i></button>
                     </div>
-                    <div id="sText" class="form-text"></div>
+                    <div class="mt-1"><div class="progress" style="height:3px;border-radius:3px"><div id="sBar" class="progress-bar" style="width:0%;transition:all .3s"></div></div><div id="sText" class="form-text" style="font-size:.72rem"></div></div>
+                </div>
+                <div class="col-12 col-sm-6">
+                    <label class="form-label">নিশ্চিত করুন <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password" name="confirm_password" id="pw2" class="form-control" placeholder="আবার লিখুন" required oninput="chkMatch()">
+                        <button class="btn btn-outline-secondary" type="button" style="border-radius:0 10px 10px 0;border:1.5px solid #e2e8f0;border-left:none" onclick="tgl('pw2',this)"><i class="bi bi-eye"></i></button>
+                    </div>
+                    <div id="mMsg" class="form-text mt-1" style="font-size:.72rem"></div>
+                </div>
+                <div class="col-12 mt-2">
+                    <button type="submit" class="btn-reg" id="subBtn"><i class="bi bi-person-plus me-2"></i>Register করুন</button>
                 </div>
             </div>
-
-            <div class="mb-4">
-                <label class="form-label">পাসওয়ার্ড নিশ্চিত করুন <span class="text-danger">*</span></label>
-                <div class="input-group">
-                    <input type="password" name="confirm_password" id="pw2" class="form-control"
-                           placeholder="আবার লিখুন" required oninput="checkMatch()">
-                    <button class="btn btn-outline-secondary" type="button" onclick="togglePw('pw2',this)">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                </div>
-                <div id="matchMsg" class="form-text mt-1"></div>
-            </div>
-
-            <button type="submit" id="subBtn" class="btn btn-gold w-100 py-2">
-                <i class="bi bi-person-plus me-2"></i>Register করুন
-            </button>
         </form>
+        <div class="text-center mt-3" style="font-size:.82rem;color:#94a3b8">
+            ইতিমধ্যে account আছে? <a href="{{ url_for('student_login') }}" class="link-gold">Login করুন</a>
+        </div>
     </div>
 </div>
-
-<div class="text-center mt-3 text-muted small">
-    ইতিমধ্যে account আছে?
-    <a href="{{ url_for('student_login') }}" style="color:var(--gold);font-weight:600">Login করুন</a>
-</div>
-
-</div>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script>
-function togglePw(id, btn) {
-    const i = document.getElementById(id);
-    i.type = i.type === 'password' ? 'text' : 'password';
-    btn.innerHTML = i.type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
-}
-function checkStrength(v) {
-    let s = 0;
-    if (v.length >= 6) s++;
-    if (v.length >= 10) s++;
-    if (/[A-Z]/.test(v)) s++;
-    if (/[0-9]/.test(v)) s++;
-    if (/[^A-Za-z0-9]/.test(v)) s++;
-    const lv = [
-        {w:'0%',cls:'bg-danger',t:''},
-        {w:'20%',cls:'bg-danger',t:'দুর্বল'},
-        {w:'45%',cls:'bg-warning',t:'মোটামুটি'},
-        {w:'70%',cls:'bg-info',t:'ভালো'},
-        {w:'90%',cls:'bg-success',t:'শক্তিশালী'},
-        {w:'100%',cls:'bg-success',t:'খুব শক্তিশালী ✓'}
-    ][Math.min(s,5)];
-    const b = document.getElementById('sBar');
-    b.style.width = lv.w; b.className = 'progress-bar ' + lv.cls;
-    const t = document.getElementById('sText');
-    t.textContent = v ? lv.t : '';
-    t.className = 'form-text ' + (s >= 3 ? 'text-success' : 'text-muted');
-}
-function checkMatch() {
-    const v1 = document.getElementById('pw1').value;
-    const v2 = document.getElementById('pw2').value;
-    const m  = document.getElementById('matchMsg');
-    const b  = document.getElementById('subBtn');
-    if (!v2) { m.textContent = ''; return; }
-    if (v1 === v2) {
-        m.textContent = '✓ পাসওয়ার্ড মিলেছে'; m.className = 'form-text mt-1 text-success'; b.disabled = false;
-    } else {
-        m.textContent = '✗ পাসওয়ার্ড মিলছে না'; m.className = 'form-text mt-1 text-danger'; b.disabled = true;
-    }
-}
+function tgl(id,btn){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';btn.innerHTML=i.type==='password'?'<i class="bi bi-eye"></i>':'<i class="bi bi-eye-slash"></i>';}
+function chkStr(v){let s=0;if(v.length>=6)s++;if(v.length>=10)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;const lv=[{w:'0%',c:'bg-danger',t:''},{w:'20%',c:'bg-danger',t:'দুর্বল'},{w:'45%',c:'bg-warning',t:'মোটামুটি'},{w:'70%',c:'bg-info',t:'ভালো'},{w:'90%',c:'bg-success',t:'শক্তিশালী'},{w:'100%',c:'bg-success',t:'খুব শক্তিশালী ✓'}][Math.min(s,5)];const b=document.getElementById('sBar');b.style.width=lv.w;b.className='progress-bar '+lv.c;const t=document.getElementById('sText');t.textContent=v?lv.t:'';}
+function chkMatch(){const v1=document.getElementById('pw1').value,v2=document.getElementById('pw2').value,m=document.getElementById('mMsg'),b=document.getElementById('subBtn');if(!v2){m.textContent='';return;}if(v1===v2){m.textContent='✓ মিলেছে';m.className='form-text mt-1 text-success';b.disabled=false;}else{m.textContent='✗ মিলছে না';m.className='form-text mt-1 text-danger';b.disabled=true;}}
 </script>
-{% endblock %}
+</body>
+</html>

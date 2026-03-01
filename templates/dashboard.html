@@ -3,186 +3,163 @@
 {% block topbar_title %}ড্যাশবোর্ড{% endblock %}
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-start mb-4 page-header">
-    <div><h1>স্বাগতম 👋</h1><p class="text-muted mb-0">গ্রন্থাগারের সামগ্রিক অবস্থার সারসংক্ষেপ</p></div>
-    <a href="{{ url_for('borrow') }}" class="btn btn-gold px-4"><i class="bi bi-arrow-left-right me-2"></i>বই ইস্যু করুন</a>
-</div>
-
-<!-- Stats Row -->
-<div class="row g-4 mb-4">
-    <div class="col-sm-6 col-xl-3">
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-sm-6 col-lg-3">
         <div class="card stat-card h-100">
-            <div class="card-body p-4">
-                <div class="stat-icon-box bg-warning bg-opacity-10 text-warning mb-3"><i class="bi bi-book-fill"></i></div>
-                <div class="stat-val">{{ total_books }}</div>
-                <div class="text-muted mt-1" style="font-size:.8rem">মোট কপি &middot; <strong>{{ total_titles }}</strong> টাইটেল</div>
-            </div>
-            <div class="card-footer border-0 bg-transparent pb-3 px-4">
-                <div class="progress" style="height:4px"><div class="progress-bar bg-warning" style="width:70%"></div></div>
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="stat-icon-box" style="background:#fef3c7"><i class="bi bi-book-fill" style="color:#f59e0b"></i></div>
+                    <span class="badge bg-warning bg-opacity-15 text-warning">বই</span>
+                </div>
+                <div class="stat-val">{{ total_titles }}</div>
+                <div class="text-muted" style="font-size:.75rem">মোট Title</div>
+                <div style="font-size:.7rem;color:#94a3b8">{{ total_books }} কপি</div>
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-6 col-sm-6 col-lg-3">
         <div class="card stat-card h-100">
-            <div class="card-body p-4">
-                <div class="stat-icon-box bg-success bg-opacity-10 text-success mb-3"><i class="bi bi-people-fill"></i></div>
-                <div class="stat-val">{{ total_members }}</div>
-                <div class="text-muted mt-1" style="font-size:.8rem">সক্রিয় সদস্য</div>
-            </div>
-            <div class="card-footer border-0 bg-transparent pb-3 px-4">
-                <div class="progress" style="height:4px"><div class="progress-bar bg-success" style="width:85%"></div></div>
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="stat-icon-box" style="background:#dbeafe"><i class="bi bi-mortarboard-fill" style="color:#3b82f6"></i></div>
+                    <span class="badge bg-primary bg-opacity-15 text-primary">Student</span>
+                </div>
+                <div class="stat-val">{{ total_students }}</div>
+                <div class="text-muted" style="font-size:.75rem">Registered</div>
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-6 col-sm-6 col-lg-3">
         <div class="card stat-card h-100">
-            <div class="card-body p-4">
-                <div class="stat-icon-box bg-primary bg-opacity-10 text-primary mb-3"><i class="bi bi-book-half"></i></div>
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="stat-icon-box" style="background:#dcfce7"><i class="bi bi-arrow-left-right" style="color:#22c55e"></i></div>
+                    <span class="badge bg-success bg-opacity-15 text-success">ইস্যু</span>
+                </div>
                 <div class="stat-val">{{ active_borrows }}</div>
-                <div class="text-muted mt-1" style="font-size:.8rem">বর্তমানে ইস্যুকৃত</div>
-            </div>
-            <div class="card-footer border-0 bg-transparent pb-3 px-4">
-                <div class="progress" style="height:4px"><div class="progress-bar bg-primary" style="width:50%"></div></div>
+                <div class="text-muted" style="font-size:.75rem">বর্তমানে ইস্যু</div>
+                {% if overdue %}<div style="font-size:.7rem;color:#ef4444">{{ overdue }} মেয়াদোত্তীর্ণ</div>{% endif %}
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-6 col-sm-6 col-lg-3">
         <div class="card stat-card h-100">
-            <div class="card-body p-4">
-                <div class="stat-icon-box bg-danger bg-opacity-10 text-danger mb-3"><i class="bi bi-clock-history"></i></div>
-                <div class="stat-val">{{ overdue }}</div>
-                <div class="text-muted mt-1" style="font-size:.8rem">মেয়াদোত্তীর্ণ</div>
-            </div>
-            <div class="card-footer border-0 bg-transparent pb-3 px-4">
-                <div class="progress" style="height:4px"><div class="progress-bar bg-danger" style="width:{% if overdue > 0 %}60{% else %}0{% endif %}%"></div></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card stat-card h-100">
-            <div class="card-body p-4">
-                <div class="stat-icon-box bg-info bg-opacity-10 text-info mb-3"><i class="bi bi-bell-fill"></i></div>
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="stat-icon-box" style="background:#fce7f3"><i class="bi bi-bell-fill" style="color:#ec4899"></i></div>
+                    <span class="badge bg-danger bg-opacity-15 text-danger">Pending</span>
+                </div>
                 <div class="stat-val">{{ pending_reqs }}</div>
-                <div class="text-muted mt-1" style="font-size:.8rem">Pending Requests</div>
-            </div>
-            <div class="card-footer border-0 bg-transparent pb-3 px-4">
-                <div class="progress" style="height:4px"><div class="progress-bar bg-info" style="width:{% if pending_reqs > 0 %}70{% else %}0{% endif %}%"></div></div>
+                <div class="text-muted" style="font-size:.75rem">Pending Requests</div>
+                {% if pending_reqs %}
+                <a href="{{ url_for('requests_list') }}" style="font-size:.7rem;color:#f59e0b;text-decoration:none">দেখুন →</a>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Bottom Row -->
-<div class="row g-4">
-    <!-- Recent Activity -->
-    <div class="col-xl-8">
-        <div class="card content-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-activity me-2 text-warning"></i>সাম্প্রতিক কার্যক্রম</span>
-                <a href="{{ url_for('borrow') }}" class="btn btn-sm btn-outline-secondary">সব দেখুন</a>
+<!-- Pending Requests + Recent Activity -->
+<div class="row g-3 mb-3">
+    <!-- Pending Requests -->
+    <div class="col-12 col-lg-6">
+        <div class="card content-card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <span><i class="bi bi-bell-fill me-2 text-warning"></i>Pending Requests</span>
+                <a href="{{ url_for('requests_list') }}" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem">সব দেখুন</a>
             </div>
             <div class="card-body p-0">
+                {% if recent_requests %}
                 <div class="table-responsive">
                     <table class="table mb-0">
-                        <thead><tr><th>বই</th><th>সদস্য</th><th>তারিখ</th><th>অবস্থা</th></tr></thead>
+                        <thead><tr><th>Student</th><th>বই</th><th>তারিখ</th><th></th></tr></thead>
                         <tbody>
-                            {% for row in recent_activity %}
-                            <tr>
-                                <td class="fw-semibold" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.title }}</td>
-                                <td>{{ row.name }}</td>
-                                <td class="text-muted small">{{ row.borrow_date[:10] }}</td>
-                                <td>
-                                    {% if row.status == 'borrowed' %}
-                                        {% if row.due_date < '2026-02-26' %}
-                                        <span class="badge bg-danger bg-opacity-15 text-danger">মেয়াদোত্তীর্ণ</span>
-                                        {% else %}
-                                        <span class="badge bg-warning bg-opacity-15 text-warning">ইস্যুকৃত</span>
-                                        {% endif %}
-                                    {% else %}
-                                    <span class="badge bg-success bg-opacity-15 text-success">ফেরত</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr><td colspan="4" class="text-center text-muted py-5">কোনো কার্যক্রম নেই</td></tr>
-                            {% endfor %}
+                        {% for r in recent_requests %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold" style="font-size:.82rem">{{ r.student_name }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="book-cover-sm" style="background:{{ r.cover_color }};width:24px;height:32px;font-size:.6rem"><i class="bi bi-book-fill"></i></div>
+                                    <span style="font-size:.8rem">{{ r.book_title[:20] }}{% if r.book_title|length > 20 %}…{% endif %}</span>
+                                </div>
+                            </td>
+                            <td style="font-size:.75rem;color:#94a3b8;white-space:nowrap">{{ r.request_date[:10] }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('approve_request', req_id=r.id) }}" class="d-inline">
+                                    <button class="btn btn-xs btn-success" style="font-size:.7rem;padding:2px 8px;border-radius:6px">✓</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="text-center py-4 text-muted" style="font-size:.85rem">
+                    <i class="bi bi-check-circle d-block mb-2" style="font-size:1.5rem;opacity:.3"></i>কোনো pending request নেই
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- Quick Actions + Popular -->
-    <div class="col-xl-4">
-        <div class="card content-card mb-4" style="background:linear-gradient(135deg,#0f172a,#1e293b);border:none">
-            <div class="card-body p-4 text-center text-white">
-                <div style="font-size:3rem;margin-bottom:.5rem">📖</div>
-                <div style="font-family:'Playfair Display',serif;font-size:1rem;color:var(--gold)" class="mb-3">দ্রুত অ্যাকশন</div>
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('add_book') }}" class="btn btn-outline-light btn-sm"><i class="bi bi-plus me-2"></i>নতুন বই যোগ</a>
-                    <a href="{{ url_for('add_member') }}" class="btn btn-outline-light btn-sm"><i class="bi bi-person-plus me-2"></i>নতুন সদস্য</a>
-                    <a href="{{ url_for('borrow') }}" class="btn btn-gold btn-sm"><i class="bi bi-arrow-left-right me-2"></i>বই ইস্যু</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="card content-card">
-            <div class="card-header"><i class="bi bi-star-fill me-2 text-warning"></i>জনপ্রিয় বই</div>
-            <div class="card-body p-0">
-                {% for book in popular_books %}
-                <div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom">
-                    <div class="book-cover-sm" style="background:{{ book.cover_color }}"><i class="bi bi-book-fill"></i></div>
-                    <div class="flex-grow-1 overflow-hidden">
-                        <div class="fw-semibold text-truncate" style="font-size:.82rem">{{ book.title }}</div>
-                        <div class="text-muted" style="font-size:.72rem">{{ book.author }}</div>
-                    </div>
-                    <span class="fw-bold" style="color:var(--gold);font-size:.8rem">{{ book.borrow_count }}×</span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Pending Requests -->
-{% if recent_requests %}
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card content-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-bell-fill me-2 text-warning"></i>সাম্প্রতিক Pending Requests</span>
-                <a href="{{ url_for('requests_list') }}" class="btn btn-sm btn-outline-secondary">সব দেখুন</a>
+    <!-- Recent Borrowings -->
+    <div class="col-12 col-lg-6">
+        <div class="card content-card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <span><i class="bi bi-clock-history me-2 text-primary"></i>সাম্প্রতিক ইস্যু</span>
+                <a href="{{ url_for('borrow') }}" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem">সব দেখুন</a>
             </div>
             <div class="card-body p-0">
+                {% if recent_activity %}
                 <div class="table-responsive">
                     <table class="table mb-0">
-                        <thead><tr><th>বই</th><th>Student</th><th>ফোন</th><th>তারিখ</th><th>অ্যাকশন</th></tr></thead>
+                        <thead><tr><th>বই</th><th>সদস্য</th><th>Due</th></tr></thead>
                         <tbody>
-                            {% for req in recent_requests %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="book-cover-sm" style="background:{{ req.cover_color }}"><i class="bi bi-book-fill"></i></div>
-                                        <span class="fw-semibold small">{{ req.book_title }}</span>
-                                    </div>
-                                </td>
-                                <td class="fw-medium small">{{ req.student_name }}</td>
-                                <td class="text-muted small">{{ req.student_phone or '—' }}</td>
-                                <td class="text-muted small">{{ req.request_date[:10] }}</td>
-                                <td>
-                                    <a href="{{ url_for('requests_list') }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-arrow-right"></i> দেখুন
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
+                        {% for a in recent_activity %}
+                        <tr>
+                            <td style="font-size:.8rem;max-width:120px">{{ a.title[:18] }}{% if a.title|length > 18 %}…{% endif %}</td>
+                            <td style="font-size:.8rem">{{ a.name }}</td>
+                            <td style="font-size:.75rem;white-space:nowrap">
+                                {% if a.due_date %}
+                                <span class="{% if a.due_date < '2026-03-01' and a.status == 'borrowed' %}text-danger{% else %}text-muted{% endif %}">{{ a.due_date }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="text-center py-4 text-muted" style="font-size:.85rem">
+                    <i class="bi bi-inbox d-block mb-2" style="font-size:1.5rem;opacity:.3"></i>কোনো লেনদেন নেই
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
-{% endif %}
+
+<!-- Popular Books -->
+<div class="card content-card">
+    <div class="card-header"><i class="bi bi-star-fill me-2 text-warning"></i>জনপ্রিয় বইসমূহ</div>
+    <div class="card-body">
+        <div class="row g-3">
+        {% for book in popular_books %}
+        <div class="col-6 col-md-3">
+            <div class="p-3 rounded-3 text-center h-100" style="background:#f8fafc;border:1px solid #e2e8f0">
+                <div style="width:44px;height:58px;background:{{ book.cover_color }};border-radius:6px;margin:0 auto .75rem;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.8);box-shadow:2px 3px 8px rgba(0,0,0,.2)">
+                    <i class="bi bi-book-fill"></i>
+                </div>
+                <div style="font-size:.78rem;font-weight:600;color:#0f172a;line-height:1.3">{{ book.title[:22] }}{% if book.title|length > 22 %}…{% endif %}</div>
+                <div style="font-size:.7rem;color:#94a3b8">{{ book.borrow_count }} বার</div>
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -851,11 +851,6 @@ def issued_books():
     return render_template('issued_books.html', approved_reqs=approved_reqs, borrowings=borrowings)
 
 
-if __name__ == '__main__':
-    init_db()
-    app.run(debug=True, port=5000)
-
-
 # ════════════════════════════════════════════
 #  Student — Forgot / Reset Password
 # ════════════════════════════════════════════
@@ -955,3 +950,8 @@ def admin_reset_student_password(student_id):
         flash(f'{s["name"]} এর পাসওয়ার্ড reset হয়েছে।', 'success')
     conn.close()
     return redirect(url_for('students'))
+
+
+if __name__ == '__main__':
+    init_db()
+    app.run(debug=True, port=5000)

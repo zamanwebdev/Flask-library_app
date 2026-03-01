@@ -3,184 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>লগইন — BiblioTech</title>
+    <title>Admin Login — {{ site.library_name }}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0f172a;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-wrap {
-            width: 100%;
-            max-width: 420px;
-            padding: 1.5rem;
-        }
-
-        .login-card {
-            background: #fff;
-            border-radius: 20px;
-            padding: 2.5rem;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.4);
-        }
-
-        .brand-icon {
-            width: 56px; height: 56px;
-            background: #f59e0b;
-            border-radius: 14px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.6rem;
-            margin: 0 auto 1rem;
-        }
-
-        .login-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.6rem;
-            font-weight: 900;
-            color: #0f172a;
-            text-align: center;
-            margin-bottom: .25rem;
-        }
-
-        .login-sub {
-            text-align: center;
-            color: #94a3b8;
-            font-size: .85rem;
-            margin-bottom: 2rem;
-        }
-
-        .form-label {
-            font-size: .75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-            color: #64748b;
-        }
-
-        .form-control {
-            border: 1.5px solid #e2e8f0;
-            border-radius: 10px;
-            padding: .65rem .9rem;
-            font-size: .9rem;
-        }
-
-        .form-control:focus {
-            border-color: #f59e0b;
-            box-shadow: 0 0 0 3px rgba(245,158,11,.12);
-        }
-
-        .input-group-text {
-            background: #f8fafc;
-            border: 1.5px solid #e2e8f0;
-            border-right: none;
-            border-radius: 10px 0 0 10px;
-            color: #94a3b8;
-        }
-
-        .input-group .form-control {
-            border-left: none;
-            border-radius: 0 10px 10px 0;
-        }
-
-        .input-group:focus-within .input-group-text {
-            border-color: #f59e0b;
-        }
-
-        .btn-login {
-            background: #0f172a;
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: .75rem;
-            font-weight: 600;
-            font-size: .95rem;
-            width: 100%;
-            transition: background .2s;
-        }
-
-        .btn-login:hover { background: #1e293b; color: #fff; }
-
-        .guest-link {
-            display: block;
-            text-align: center;
-            margin-top: 1rem;
-            font-size: .85rem;
-            color: #64748b;
-            text-decoration: none;
-        }
-
-        .guest-link:hover { color: #f59e0b; }
-
-        .hint-box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: .75rem 1rem;
-            margin-top: 1.25rem;
-            font-size: .78rem;
-            color: #94a3b8;
-            text-align: center;
-        }
-
-        .hint-box strong { color: #475569; }
+        :root { --gold:#f59e0b; }
+        * { box-sizing: border-box; }
+        body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1rem; }
+        .login-card { background:#fff; border-radius:20px; box-shadow:0 25px 60px rgba(0,0,0,.4); width:100%; max-width:420px; overflow:hidden; }
+        .login-header { background:#0f172a; padding:2rem 2rem 1.5rem; text-align:center; }
+        .login-logo { width:56px;height:56px;background:var(--gold);border-radius:14px;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem;overflow:hidden; }
+        .login-logo img { width:100%;height:100%;object-fit:cover;border-radius:14px; }
+        .login-title { font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:#fff;margin:0; }
+        .login-sub { color:var(--gold);font-size:.7rem;letter-spacing:2px;text-transform:uppercase;margin-top:4px; }
+        .login-body { padding:2rem; }
+        .form-label { font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:.35rem; }
+        .form-control { border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;padding:.65rem .9rem; }
+        .form-control:focus { border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,158,11,.12);outline:none; }
+        .btn-login { background:var(--gold);color:#0f172a;border:none;border-radius:10px;font-weight:700;font-size:.95rem;padding:.75rem;width:100%;transition:all .2s; }
+        .btn-login:hover { background:#fcd34d; transform:translateY(-1px); }
+        .alert { font-size:.85rem; border-radius:10px; }
+        .student-link { text-align:center;padding:0 2rem 1.75rem;font-size:.82rem;color:#94a3b8; }
+        .student-link a { color:var(--gold);font-weight:600;text-decoration:none; }
     </style>
 </head>
 <body>
-<div class="login-wrap">
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}{% for cat, msg in messages %}
-    <div class="alert alert-{% if cat=='success' %}success{% elif cat=='error' %}danger{% else %}info{% endif %} alert-dismissible fade show mb-3 d-flex align-items-center gap-2" role="alert">
-        <i class="bi bi-{% if cat=='success' %}check-circle-fill{% elif cat=='error' %}exclamation-circle-fill{% else %}info-circle-fill{% endif %}"></i>
-        {{ msg }}<button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}{% endif %}{% endwith %}
-
-    <div class="login-card">
-        <div class="brand-icon" style="margin:0 auto 1rem;overflow:hidden">
-        {% if site.logo_type == 'image' %}
-        <img src="{{ site.library_logo }}" style="width:100%%;height:100%%;object-fit:cover;border-radius:14px" alt="logo">
-        {% else %}
-        {{ site.library_logo }}
-        {% endif %}
-    </div>
+<div class="login-card">
+    <div class="login-header">
+        <div class="login-logo">
+            {% if site.logo_type == 'image' %}
+            <img src="{{ site.library_logo }}" alt="logo">
+            {% else %}
+            {{ site.library_logo }}
+            {% endif %}
+        </div>
         <div class="login-title">{{ site.library_name }}</div>
-        <div class="login-sub">{{ site.library_tagline }}</div>
+        <div class="login-sub">Admin Login</div>
+    </div>
+    <div class="login-body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+        <div class="alert alert-{% if cat=='error' %}danger{% elif cat=='success' %}success{% else %}info{% endif %} d-flex align-items-center gap-2 py-2">
+            <i class="bi bi-{% if cat=='error' %}exclamation-circle-fill{% else %}info-circle-fill{% endif %} flex-shrink-0"></i>
+            <span>{{ msg }}</span>
+        </div>
+        {% endfor %}{% endif %}{% endwith %}
 
         <form method="POST">
             <div class="mb-3">
                 <label class="form-label">Username</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
-                    <input type="text" name="username" class="form-control" placeholder="admin" required autofocus>
-                </div>
+                <input type="text" name="username" class="form-control" placeholder="admin" required autofocus autocomplete="username">
             </div>
             <div class="mb-4">
                 <label class="form-label">Password</label>
                 <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    <input type="password" name="password" id="pw" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                    <button class="btn btn-outline-secondary" type="button" style="border-radius:0 10px 10px 0;border:1.5px solid #e2e8f0;border-left:none"
+                            onclick="const i=document.getElementById('pw');i.type=i.type==='password'?'text':'password';this.innerHTML=i.type==='password'?'<i class=\'bi bi-eye\'></i>':'<i class=\'bi bi-eye-slash\'></i>'">
+                        <i class="bi bi-eye"></i>
+                    </button>
                 </div>
             </div>
             <button type="submit" class="btn-login">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Admin হিসেবে লগইন
+                <i class="bi bi-box-arrow-in-right me-2"></i>Login করুন
             </button>
         </form>
-
-        <a href="{{ url_for('books') }}" class="guest-link">
-            <i class="bi bi-eye me-1"></i>লগইন ছাড়া শুধু বইয়ের তালিকা দেখুন →
-        </a>
-
-        <div class="hint-box">
-            <strong>Demo credentials:</strong><br>
-            Username: <strong>admin</strong> &nbsp;|&nbsp; Password: <strong>admin123</strong>
-        </div>
+    </div>
+    <div class="student-link">
+        Student? <a href="{{ url_for('student_login') }}">Student Login করুন</a>
     </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>

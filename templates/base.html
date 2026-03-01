@@ -3,36 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}গ্রন্থাগার ব্যবস্থাপনা{% endblock %} — BiblioTech</title>
+    <title>{% block title %}গ্রন্থাগার ব্যবস্থাপনা{% endblock %} — {{ site.library_name }}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --sidebar-bg:#0f172a; --sidebar-w:250px; --gold:#f59e0b; --gold-light:#fcd34d; }
         body { font-family:'Inter',sans-serif; background:#f1f5f9; }
-        #sidebar { width:var(--sidebar-w); min-height:100vh; background:var(--sidebar-bg); position:fixed; top:0; left:0; display:flex; flex-direction:column; z-index:1000; }
-        .brand-icon { width:42px;height:42px;background:var(--gold);border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem;color:#0f172a;font-weight:800; }
-        .brand-name { font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:#fff;line-height:1; }
-        .brand-sub { font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold); }
-        .nav-section { font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);padding:.75rem 1.25rem .35rem; }
+
+        /* ── Sidebar ── */
+        #sidebar {
+            width: var(--sidebar-w);
+            min-height: 100vh;
+            background: var(--sidebar-bg);
+            position: fixed;
+            top: 0; left: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 1040;
+            transition: transform .25s ease;
+        }
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.5);
+            z-index: 1039;
+        }
+
+        /* Mobile: sidebar hidden by default */
+        @media (max-width: 991.98px) {
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.open { transform: translateX(0); }
+            #sidebar-overlay.open { display: block; }
+            #main { margin-left: 0 !important; }
+        }
+
+        .brand-icon { width:42px;height:42px;background:var(--gold);border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem;color:#0f172a;font-weight:800;flex-shrink:0; }
+        .brand-name { font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:#fff;line-height:1; }
+        .brand-sub { font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold); }
+        .nav-section { font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);padding:.75rem 1.25rem .35rem; }
         .sidebar-nav .nav-link { color:rgba(255,255,255,.6);padding:.6rem 1.25rem;border-radius:8px;margin:1px 10px;font-size:.875rem;font-weight:500;display:flex;align-items:center;gap:.6rem;transition:all .15s; }
-        .sidebar-nav .nav-link i { font-size:1rem;width:20px;text-align:center; }
+        .sidebar-nav .nav-link i { font-size:1rem;width:20px;text-align:center;flex-shrink:0; }
         .sidebar-nav .nav-link:hover { color:#fff;background:rgba(255,255,255,.07); }
         .sidebar-nav .nav-link.active { color:var(--gold);background:rgba(245,158,11,.12);border-left:3px solid var(--gold);margin-left:7px;padding-left:calc(1.25rem - 3px); }
+
+        /* ── Main ── */
         #main { margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column; }
-        .topbar { background:#fff;height:60px;padding:0 1.75rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:999;box-shadow:0 1px 4px rgba(0,0,0,.04); }
-        .topbar-title { font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:#0f172a; }
-        .topbar-av { width:34px;height:34px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#0f172a; }
-        .page-body { padding:1.75rem;flex:1; }
+        .topbar { background:#fff;height:60px;padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:999;box-shadow:0 1px 4px rgba(0,0,0,.04); }
+        .topbar-title { font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px; }
+        .topbar-av { width:34px;height:34px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#0f172a;border:none; }
+        .hamburger { background:none;border:none;padding:4px 8px;font-size:1.3rem;color:#0f172a;cursor:pointer;display:none; }
+        @media (max-width: 991.98px) { .hamburger { display:block; } }
+
+        .page-body { padding:1.25rem;flex:1; }
+        @media (min-width:768px) { .page-body { padding:1.75rem; } }
+
+        /* ── Cards & Stats ── */
         .stat-card { border:none;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:transform .15s; }
         .stat-card:hover { transform:translateY(-2px); }
-        .stat-icon-box { width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem; }
-        .stat-val { font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;line-height:1;color:#0f172a; }
+        .stat-icon-box { width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0; }
+        .stat-val { font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:900;line-height:1;color:#0f172a; }
+        @media (min-width:768px) { .stat-icon-box { width:48px;height:48px;font-size:1.3rem; } .stat-val { font-size:2rem; } }
         .content-card { border:none;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06); }
-        .content-card .card-header { background:#fff;border-bottom:1px solid #f1f5f9;border-radius:14px 14px 0 0!important;padding:1rem 1.25rem;font-family:'Playfair Display',serif;font-weight:700;font-size:1rem;color:#0f172a; }
-        .table th { font-size:.7rem;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;font-weight:600;border-bottom:2px solid #f1f5f9;background:#f8fafc; }
-        .table td { vertical-align:middle;font-size:.875rem;border-bottom:1px solid #f1f5f9;color:#334155; }
+        .content-card .card-header { background:#fff;border-bottom:1px solid #f1f5f9;border-radius:14px 14px 0 0!important;padding:.875rem 1.25rem;font-family:'Playfair Display',serif;font-weight:700;font-size:.95rem;color:#0f172a; }
+
+        /* ── Table ── */
+        .table th { font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;font-weight:600;border-bottom:2px solid #f1f5f9;background:#f8fafc;white-space:nowrap; }
+        .table td { vertical-align:middle;font-size:.85rem;border-bottom:1px solid #f1f5f9;color:#334155; }
         .table tbody tr:hover td { background:#fafbfc; }
+
+        /* ── Misc ── */
         .book-cover-sm { width:34px;height:46px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.8);font-size:.85rem;box-shadow:2px 2px 6px rgba(0,0,0,.2);flex-shrink:0; }
         .form-label { font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:.35rem; }
         .form-control,.form-select { border:1.5px solid #e2e8f0;border-radius:10px;font-size:.875rem;padding:.6rem .875rem; }
@@ -40,14 +81,23 @@
         .btn { font-weight:600;font-size:.85rem;border-radius:10px; }
         .btn-gold { background:var(--gold);color:#0f172a;border:none; }
         .btn-gold:hover { background:var(--gold-light);color:#0f172a; }
-        .page-header h1 { font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:900;color:#0f172a; }
+        .page-header h1 { font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:#0f172a; }
+        @media (min-width:768px) { .page-header h1 { font-size:1.75rem; } }
         .badge { font-weight:600;font-size:.7rem; }
         .member-av { width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem; }
         .sidebar-footer { margin-top:auto;padding:1rem 1.25rem;border-top:1px solid rgba(255,255,255,.07);font-size:.75rem;color:rgba(255,255,255,.25); }
-        .admin-badge { background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px; }
+        .admin-badge { background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap; }
+
+        /* ── Dropdown fix ── */
+        .dropdown-menu { font-size:.875rem; }
     </style>
 </head>
 <body>
+
+<!-- Sidebar Overlay (mobile) -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
 <nav id="sidebar">
     <div class="sidebar-brand d-flex align-items-center gap-2 p-3 border-bottom" style="border-color:rgba(255,255,255,.07)!important">
         <div class="brand-icon" style="overflow:hidden">
@@ -57,12 +107,17 @@
             {{ site.library_logo }}
             {% endif %}
         </div>
-        <div>
-            <div class="brand-name">{{ site.library_name }}</div>
+        <div class="overflow-hidden">
+            <div class="brand-name text-truncate">{{ site.library_name }}</div>
             <div class="brand-sub">{{ site.library_tagline }}</div>
         </div>
+        <!-- Mobile close button -->
+        <button class="ms-auto btn btn-sm d-lg-none" style="color:rgba(255,255,255,.4);background:none;border:none;font-size:1.1rem" onclick="closeSidebar()">
+            <i class="bi bi-x-lg"></i>
+        </button>
     </div>
-    <div class="sidebar-nav flex-grow-1 py-2">
+
+    <div class="sidebar-nav flex-grow-1 py-2" style="overflow-y:auto">
         <div class="nav-section">প্রধান</div>
         {% if session.get("is_admin") %}
         <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}"><i class="bi bi-grid-fill"></i> ড্যাশবোর্ড</a>
@@ -82,78 +137,66 @@
         <a href="{{ url_for('borrow') }}" class="nav-link {% if request.endpoint=='borrow' %}active{% endif %}"><i class="bi bi-arrow-left-right"></i> ইস্যু / ফেরত</a>
         <a href="{{ url_for('issued_books') }}" class="nav-link {% if request.endpoint=='issued_books' %}active{% endif %}"><i class="bi bi-list-check"></i> বিতরণ তালিকা</a>
         <a href="{{ url_for('requests_list') }}" class="nav-link {% if request.endpoint=='requests_list' %}active{% endif %}"><i class="bi bi-bell-fill"></i> Requests</a>
+        {% if session.get('is_super') %}
+        <div class="nav-section mt-2">Super Admin</div>
+        <a href="{{ url_for('settings') }}" class="nav-link {% if request.endpoint=='settings' %}active{% endif %}" style="color:var(--gold)"><i class="bi bi-gear-fill"></i> Settings</a>
+        {% endif %}
         {% endif %}
     </div>
+
     <div class="sidebar-footer">
-    <div class="fw-semibold" style="color:rgba(255,255,255,.4)">{{ site.library_footer }}</div>
-    <div id="sidebar-date"></div>
-    {% if session.get('is_super') %}
-    <a href="{{ url_for('settings') }}" class="d-block mt-2" style="color:var(--gold);font-size:.75rem;text-decoration:none">
-        <i class="bi bi-gear-fill me-1"></i>Settings
-    </a>
-    {% endif %}
-</div>
+        <div class="fw-semibold" style="color:rgba(255,255,255,.4)">{{ site.library_footer }}</div>
+        <div id="sidebar-date"></div>
+    </div>
 </nav>
 
+<!-- Main Content -->
 <div id="main">
+    <!-- Topbar -->
     <div class="topbar">
-        <div class="topbar-title">{% block topbar_title %}{% endblock %}</div>
-        <div class="d-flex align-items-center gap-3">
-            <span class="text-muted d-none d-md-inline" style="font-size:.8rem">
+        <div class="d-flex align-items-center gap-2">
+            <button class="hamburger" onclick="openSidebar()" aria-label="Menu">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="topbar-title">{% block topbar_title %}{% endblock %}</div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted d-none d-md-inline" style="font-size:.78rem">
                 <i class="bi bi-calendar3 me-1" style="color:var(--gold)"></i><span id="live-date"></span>
             </span>
+
             {% if session.get("is_admin") %}
                 {% if session.get("is_super") %}
-                <span class="admin-badge" style="background:rgba(245,158,11,.25);color:#b45309">SUPER ADMIN</span>
+                <span class="admin-badge d-none d-sm-inline" style="background:rgba(245,158,11,.25);color:#b45309">SUPER ADMIN</span>
                 {% else %}
-                <span class="admin-badge">ADMIN</span>
+                <span class="admin-badge d-none d-sm-inline">ADMIN</span>
                 {% endif %}
-                <!-- User dropdown -->
                 <div class="dropdown">
-                    <button class="topbar-av border-0 dropdown-toggle" style="cursor:pointer"
-                            data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="topbar-av dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                         {{ session.get("username", "A")[0].upper() }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width:200px;border-radius:12px;border:1px solid #e2e8f0;padding:6px">
                         <li>
                             <div class="px-3 py-2">
                                 <div class="fw-bold" style="font-size:.85rem">{{ session.get("username") }}</div>
-                                <div class="text-muted" style="font-size:.75rem">
-                                    {% if session.get("is_super") %}Super Admin{% else %}Admin{% endif %}
-                                </div>
+                                <div class="text-muted" style="font-size:.75rem">{% if session.get("is_super") %}Super Admin{% else %}Admin{% endif %}</div>
                             </div>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>
-                        <li>
-                            <a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="{{ url_for('change_password') }}">
-                                <i class="bi bi-shield-lock" style="color:var(--gold)"></i>
-                                পাসওয়ার্ড পরিবর্তন
-                            </a>
-                        </li>
+                        <li><a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="{{ url_for('change_password') }}"><i class="bi bi-shield-lock" style="color:var(--gold)"></i>পাসওয়ার্ড পরিবর্তন</a></li>
                         {% if session.get("is_super") %}
-                        <li>
-                            <a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="{{ url_for('settings') }}">
-                                <i class="bi bi-gear-fill" style="color:var(--gold)"></i>
-                                Settings
-                            </a>
-                        </li>
+                        <li><a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="{{ url_for('settings') }}"><i class="bi bi-gear-fill" style="color:var(--gold)"></i>Settings</a></li>
                         {% endif %}
                         <li><hr class="dropdown-divider my-1"></li>
-                        <li>
-                            <a class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-danger" href="{{ url_for('logout') }}">
-                                <i class="bi bi-box-arrow-right"></i>
-                                লগআউট
-                            </a>
-                        </li>
+                        <li><a class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-danger" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i>লগআউট</a></li>
                     </ul>
                 </div>
+
             {% elif session.get('student_logged_in') %}
-                <!-- Student dropdown -->
-                <span class="badge bg-success bg-opacity-15 text-success">STUDENT</span>
+                <span class="admin-badge d-none d-sm-inline" style="background:rgba(46,204,113,.15);color:#16a34a;border-color:rgba(46,204,113,.3)">STUDENT</span>
                 <div class="dropdown">
-                    <button class="topbar-av border-0 dropdown-toggle"
-                            style="cursor:pointer;background:#2ecc71;color:#fff"
-                            data-bs-toggle="dropdown">
+                    <button class="topbar-av dropdown-toggle" style="background:#2ecc71;color:#fff" data-bs-toggle="dropdown">
                         {{ session.get('student_name', 'S')[0].upper() }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width:200px;border-radius:12px;border:1px solid #e2e8f0;padding:6px">
@@ -164,57 +207,70 @@
                             </div>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>
-                        <li>
-                            <a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="{{ url_for('my_books') }}">
-                                <i class="bi bi-bookmark-fill" style="color:var(--gold)"></i>আমার বই
-                            </a>
-                        </li>
+                        <li><a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="{{ url_for('my_books') }}"><i class="bi bi-bookmark-fill" style="color:var(--gold)"></i>আমার বই</a></li>
                         <li><hr class="dropdown-divider my-1"></li>
-                        <li>
-                            <a class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-danger" href="{{ url_for('student_logout') }}">
-                                <i class="bi bi-box-arrow-right"></i>লগআউট
-                            </a>
-                        </li>
+                        <li><a class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-danger" href="{{ url_for('student_logout') }}"><i class="bi bi-box-arrow-right"></i>লগআউট</a></li>
                     </ul>
                 </div>
+
             {% else %}
-                <a href="{{ url_for('student_login') }}" class="btn btn-sm btn-outline-success" style="font-size:.75rem">
-                    <i class="bi bi-mortarboard me-1"></i>Student Login
+                <a href="{{ url_for('student_login') }}" class="btn btn-sm btn-outline-success" style="font-size:.75rem;white-space:nowrap">
+                    <i class="bi bi-mortarboard me-1"></i><span class="d-none d-sm-inline">Student </span>Login
                 </a>
                 <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem">
-                    <i class="bi bi-box-arrow-in-right me-1"></i>Admin
+                    <i class="bi bi-box-arrow-in-right me-1"></i><span class="d-none d-sm-inline">Admin</span>
                 </a>
             {% endif %}
         </div>
     </div>
+
+    <!-- Flash messages -->
     <div class="page-body pb-0 pt-3">
         {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for cat, msg in messages %}
-        <div class="alert alert-{% if cat=='success' %}success{% elif cat=='error' %}danger{% else %}info{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
-            <i class="bi bi-{% if cat=='success' %}check-circle-fill{% elif cat=='error' %}exclamation-circle-fill{% else %}info-circle-fill{% endif %}"></i>
-            {{ msg }}<button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        <div class="alert alert-{% if cat=='success' %}success{% elif cat=='error' %}danger{% else %}info{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert" style="font-size:.875rem">
+            <i class="bi bi-{% if cat=='success' %}check-circle-fill{% elif cat=='error' %}exclamation-circle-fill{% else %}info-circle-fill{% endif %} flex-shrink-0"></i>
+            <span>{{ msg }}</span><button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
         </div>
         {% endfor %}{% endif %}{% endwith %}
     </div>
+
     <div class="page-body">{% block content %}{% endblock %}</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script>
+// Sidebar toggle
+function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebar-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+// Close sidebar on nav link click (mobile)
+document.querySelectorAll('#sidebar .nav-link').forEach(function(link) {
+    link.addEventListener('click', function() {
+        if (window.innerWidth < 992) closeSidebar();
+    });
+});
+
+// Dynamic date
 (function() {
-    const bn_days   = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
-    const bn_months = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
-    function updateDate() {
-        const now  = new Date();
-        const day  = bn_days[now.getDay()];
-        const date = now.getDate();
-        const mon  = bn_months[now.getMonth()];
-        const year = now.getFullYear();
-        document.getElementById('live-date').textContent = day + ', ' + date + ' ' + mon + ' ' + year;
-        const sidebarDate = document.getElementById('sidebar-date');
-        if (sidebarDate) sidebarDate.textContent = date + ' ' + mon + ', ' + year;
+    const days   = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
+    const months = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+    function update() {
+        const n = new Date();
+        const str = days[n.getDay()] + ', ' + n.getDate() + ' ' + months[n.getMonth()] + ' ' + n.getFullYear();
+        const ld = document.getElementById('live-date');
+        const sd = document.getElementById('sidebar-date');
+        if (ld) ld.textContent = str;
+        if (sd) sd.textContent = n.getDate() + ' ' + months[n.getMonth()] + ', ' + n.getFullYear();
     }
-    updateDate();
-    setInterval(updateDate, 60000);
+    update();
+    setInterval(update, 60000);
 })();
 </script>
 </body>

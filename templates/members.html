@@ -2,59 +2,52 @@
 {% block title %}সদস্যগণ{% endblock %}
 {% block topbar_title %}সদস্যগণ{% endblock %}
 {% block content %}
-
-<div class="d-flex justify-content-between align-items-start mb-4 page-header">
-    <div><h1>সদস্যতালিকা</h1><p class="text-muted mb-0">গ্রন্থাগারের সকল সদস্য পরিচালনা করুন</p></div>
-    <a href="{{ url_for('add_member') }}" class="btn btn-gold px-4"><i class="bi bi-person-plus me-2"></i>নতুন সদস্য</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 page-header">
+    <h1>সদস্যগণ</h1>
+    <a href="{{ url_for('add_member') }}" class="btn btn-gold"><i class="bi bi-person-plus me-2"></i>নতুন সদস্য</a>
 </div>
-
 <div class="card content-card">
     <div class="card-header">
-        <form method="GET" class="d-flex gap-2">
-            <div class="input-group" style="max-width:360px">
-                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="নাম বা ইমেইল দিয়ে খুঁজুন..." value="{{ search }}">
+        <form method="GET" class="d-flex flex-wrap gap-2">
+            <div class="input-group" style="max-width:300px;min-width:180px;flex:1">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control" placeholder="নাম বা ইমেইল..." value="{{ search }}">
             </div>
-            <button type="submit" class="btn btn-dark"><i class="bi bi-search me-1"></i>খুঁজুন</button>
+            <button type="submit" class="btn btn-dark">খুঁজুন</button>
             {% if search %}<a href="{{ url_for('members') }}" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>{% endif %}
         </form>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table mb-0">
-                <thead><tr><th>সদস্য</th><th>ইমেইল</th><th>ফোন</th><th>যোগদান</th><th>অবস্থা</th><th>অ্যাকশন</th></tr></thead>
+                <thead><tr><th>#</th><th>সদস্য</th><th class="d-none d-sm-table-cell">ফোন</th><th class="d-none d-md-table-cell">যোগদান</th><th></th></tr></thead>
                 <tbody>
-                    {% for m in members %}
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="member-av" style="background:hsl({{ loop.index * 57 }},60%,88%);color:hsl({{ loop.index * 57 }},50%,35%)">{{ m.name[0].upper() }}</div>
-                                <span class="fw-semibold">{{ m.name }}</span>
+                {% for m in members %}
+                <tr>
+                    <td class="text-muted small">{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="member-av flex-shrink-0" style="background:hsl({{ loop.index*67 }},60%,88%);color:hsl({{ loop.index*67 }},50%,35%)">{{ m.name[0].upper() }}</div>
+                            <div>
+                                <div class="fw-semibold" style="font-size:.85rem">{{ m.name }}</div>
+                                <div class="text-muted" style="font-size:.75rem">{{ m.email }}</div>
                             </div>
-                        </td>
-                        <td class="text-muted small">{{ m.email }}</td>
-                        <td class="text-muted small">{{ m.phone or '—' }}</td>
-                        <td class="text-muted small">{{ m.join_date[:10] }}</td>
-                        <td>
-                            {% if m.active %}
-                            <span class="badge bg-success bg-opacity-15 text-success">সক্রিয়</span>
-                            {% else %}
-                            <span class="badge bg-danger bg-opacity-15 text-danger">নিষ্ক্রিয়</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <form method="POST" action="{{ url_for('delete_member', member_id=m.id) }}" onsubmit="return confirm('এই সদস্যকে মুছে ফেলবেন?')">
-                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-people" style="font-size:2rem;opacity:.2;display:block;margin-bottom:.5rem"></i>কোনো সদস্য পাওয়া যায়নি</td></tr>
-                    {% endfor %}
+                        </div>
+                    </td>
+                    <td class="d-none d-sm-table-cell text-muted small">{{ m.phone or '—' }}</td>
+                    <td class="d-none d-md-table-cell text-muted small">{{ m.join_date[:10] }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_member', member_id=m.id) }}" onsubmit="return confirm('মুছে ফেলবেন?')">
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-people d-block mb-2" style="font-size:2rem;opacity:.2"></i>কোনো সদস্য পাওয়া যায়নি</td></tr>
+                {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-    <div class="card-footer text-muted small">মোট {{ members|length }} জন সদস্য</div>
 </div>
 {% endblock %}

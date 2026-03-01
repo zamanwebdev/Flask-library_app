@@ -1,46 +1,72 @@
-{% extends 'base.html' %}
-{% block title %}Student Login{% endblock %}
-{% block topbar_title %}Student Login{% endblock %}
-{% block content %}
-
-<div class="row justify-content-center">
-<div class="col-md-5 col-lg-4">
-
-<div class="text-center mb-4">
-    <div style="width:56px;height:56px;background:var(--gold);border-radius:14px;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🎓</div>
-    <h2 style="font-family:'Playfair Display',serif;font-weight:900">Student Login</h2>
-    <p class="text-muted">আপনার account এ প্রবেশ করুন</p>
-</div>
-
-<div class="card content-card">
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login — {{ site.library_name }}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold:#f59e0b; }
+        body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#064e3b 0%,#065f46 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1rem; }
+        .card { border:none; border-radius:20px; box-shadow:0 25px 60px rgba(0,0,0,.35); width:100%; max-width:420px; overflow:hidden; }
+        .card-header-custom { background:#065f46; padding:2rem 2rem 1.5rem; text-align:center; }
+        .logo-box { width:56px;height:56px;background:var(--gold);border-radius:14px;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem; }
+        .form-label { font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:.35rem; }
+        .form-control { border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;padding:.65rem .9rem; }
+        .form-control:focus { border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.12);outline:none; }
+        .btn-green { background:#10b981;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:.95rem;padding:.75rem;width:100%; }
+        .btn-green:hover { background:#059669;color:#fff; }
+        .link-gold { color:var(--gold);font-weight:600;text-decoration:none; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="card-header-custom">
+        <div class="logo-box">🎓</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:#fff;margin:0">Student Login</h2>
+        <p style="color:rgba(255,255,255,.6);font-size:.8rem;margin:.5rem 0 0">{{ site.library_name }}</p>
+    </div>
     <div class="card-body p-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+        <div class="alert alert-{% if cat=='error' %}danger{% elif cat=='success' %}success{% else %}info{% endif %} d-flex align-items-center gap-2 py-2 mb-3" style="font-size:.85rem;border-radius:10px">
+            <i class="bi bi-{% if cat=='error' %}exclamation-circle-fill{% else %}check-circle-fill{% endif %} flex-shrink-0"></i><span>{{ msg }}</span>
+        </div>
+        {% endfor %}{% endif %}{% endwith %}
+
         <form method="POST">
             <div class="mb-3">
-                <label class="form-label">ইমেইল <span class="text-danger">*</span></label>
+                <label class="form-label">ইমেইল</label>
                 <input type="email" name="email" class="form-control" placeholder="example@gmail.com" required autofocus>
             </div>
-            <div class="mb-4">
-                <label class="form-label">পাসওয়ার্ড <span class="text-danger">*</span></label>
+            <div class="mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label mb-0">পাসওয়ার্ড</label>
+                    <a href="{{ url_for('forgot_password') }}" style="font-size:.78rem;color:var(--gold);text-decoration:none">
+                        <i class="bi bi-key me-1"></i>ভুলে গেছেন?
+                    </a>
+                </div>
                 <div class="input-group">
                     <input type="password" name="password" id="pw" class="form-control" placeholder="••••••••" required>
-                    <button class="btn btn-outline-secondary" type="button"
+                    <button class="btn btn-outline-secondary" type="button" style="border-radius:0 10px 10px 0;border:1.5px solid #e2e8f0;border-left:none"
                             onclick="const i=document.getElementById('pw');i.type=i.type==='password'?'text':'password';this.innerHTML=i.type==='password'?'<i class=\'bi bi-eye\'></i>':'<i class=\'bi bi-eye-slash\'></i>'">
                         <i class="bi bi-eye"></i>
                     </button>
                 </div>
             </div>
-            <button type="submit" class="btn btn-gold w-100 py-2">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Login করুন
-            </button>
+            <div class="mt-4">
+                <button type="submit" class="btn-green"><i class="bi bi-box-arrow-in-right me-2"></i>Login করুন</button>
+            </div>
         </form>
+
+        <div class="text-center mt-3" style="font-size:.82rem;color:#94a3b8">
+            নতুন? <a href="{{ url_for('student_register') }}" class="link-gold">Register করুন</a>
+            &nbsp;|&nbsp; <a href="{{ url_for('login') }}" class="link-gold">Admin Login</a>
+        </div>
     </div>
 </div>
-
-<div class="text-center mt-3 text-muted small">
-    নতুন student?
-    <a href="{{ url_for('student_register') }}" style="color:var(--gold);font-weight:600">Register করুন</a>
-</div>
-
-</div>
-</div>
-{% endblock %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
