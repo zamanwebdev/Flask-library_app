@@ -99,6 +99,48 @@
                         </div>
                     </div>
 
+                    <hr class="my-4">
+
+                    <!-- SMTP Email Config -->
+                    <div class="mb-3">
+                        <div class="fw-bold mb-2" style="color:#0f172a">
+                            <i class="bi bi-envelope-fill me-2 text-warning"></i>Email Config (Password Reset)
+                        </div>
+
+                        <!-- Step guide -->
+                        <div class="p-3 rounded-3 mb-3" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:.8rem">
+                            <div class="fw-bold mb-2" style="color:#0f172a">📋 Gmail App Password তৈরির ধাপ:</div>
+                            <ol class="mb-0" style="padding-left:1.2rem;line-height:2;color:#475569">
+                                <li>Gmail এ login করুন → <strong>Google Account</strong> এ যান</li>
+                                <li><strong>Security</strong> → <strong>2-Step Verification</strong> চালু করুন</li>
+                                <li>নিচে <strong>App Passwords</strong> option আসবে → ক্লিক করুন</li>
+                                <li>App name দিন (যেমন: Library) → <strong>Create</strong></li>
+                                <li>16-digit password টি copy করে নিচে paste করুন</li>
+                            </ol>
+                            <a href="https://myaccount.google.com/apppasswords" target="_blank"
+                               class="btn btn-sm btn-outline-secondary mt-2">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>App Passwords খুলুন
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Gmail Address</label>
+                        <input type="email" name="smtp_email" class="form-control"
+                               value="{{ site.smtp_email }}" placeholder="yourname@gmail.com">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Gmail App Password</label>
+                        <input type="password" name="smtp_password" class="form-control"
+                               placeholder="{% if site.smtp_password %}●●●● ●●●● ●●●● ●●●● (পরিবর্তন করতে নতুনটি লিখুন){% else %}xxxx xxxx xxxx xxxx{% endif %}">
+                        <div class="form-text">
+                            Gmail password নয় — App Password ব্যবহার করুন।
+                            {% if site.smtp_password %}
+                            <span class="text-success"><i class="bi bi-check-circle me-1"></i>App Password সেট আছে।</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <div class="d-flex gap-2 pt-2">
                         <button type="submit" class="btn btn-gold px-4">
                             <i class="bi bi-check-lg me-2"></i>পরিবর্তন সংরক্ষণ করুন

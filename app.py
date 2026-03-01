@@ -3,12 +3,100 @@ import sqlite3
 import random
 import os
 import base64
+import secrets
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = 'library_secret_key_2024'
 DB_PATH = 'library.db'
+
+# ── Gmail SMTP Config (settings DB থেকে নেওয়া হবে) ──
+def send_reset_email(to_email, student_name, reset_token):
+    s = get_settings()
+    smtp_email    = s.get('smtp_email', '')
+    smtp_password = s.get('smtp_password', '')
+    if not smtp_email or not smtp_password:
+        return False, 'SMTP config করা নেই।'
+
+    # Actual server URL ব্যবহার করি
+    from flask import request as freq
+    try:
+        base_url = freq.host_url.rstrip('/')
+    except RuntimeError:
+        base_url = 'http://127.0.0.1:5000'
+    reset_url = f"{base_url}/student/reset-password/{reset_token}"
+    s2   = get_settings()
+    lib  = s2.get('library_name', 'Library')
+    body = f"""
+    <!DOCTYPE html>
+    <html><body style='margin:0;padding:0;background:#f1f5f9;font-family:Arial,sans-serif'>
+    <table width='100%' cellpadding='0' cellspacing='0'>
+      <tr><td align='center' style='padding:40px 20px'>
+        <table width='500' cellpadding='0' cellspacing='0' style='max-width:500px;width:100%'>
+
+          <!-- Header -->
+          <tr><td style='background:#0f172a;border-radius:16px 16px 0 0;padding:30px;text-align:center'>
+            <div style='font-size:2rem;margin-bottom:8px'>📚</div>
+            <div style='font-family:Georgia,serif;font-size:1.4rem;font-weight:bold;color:#fff'>{lib}</div>
+            <div style='color:#f59e0b;font-size:.75rem;letter-spacing:2px;text-transform:uppercase;margin-top:4px'>Library System</div>
+          </td></tr>
+
+          <!-- Body -->
+          <tr><td style='background:#fff;padding:36px 40px'>
+            <p style='color:#0f172a;font-size:1rem;margin-top:0'>প্রিয় <strong>{student_name}</strong>,</p>
+            <p style='color:#475569;line-height:1.7'>আমরা আপনার Library account এর <strong>Password Reset</strong> এর একটি request পেয়েছি।
+            নিচের বাটনে ক্লিক করে নতুন password সেট করুন:</p>
+
+            <div style='text-align:center;margin:32px 0'>
+              <a href='{reset_url}'
+                 style='display:inline-block;background:#f59e0b;color:#0f172a;padding:14px 36px;
+                        border-radius:10px;text-decoration:none;font-weight:bold;font-size:1rem'>
+                🔑 Password Reset করুন
+              </a>
+            </div>
+
+            <div style='background:#fef9ec;border-left:4px solid #f59e0b;padding:14px 16px;border-radius:0 8px 8px 0;margin:20px 0'>
+              <p style='margin:0;color:#78350f;font-size:.85rem'>
+                ⏰ এই link টি <strong>১ ঘণ্টা</strong> পর্যন্ত valid।<br>
+                মেয়াদ শেষ হলে আবার Forgot Password করুন।
+              </p>
+            </div>
+
+            <p style='color:#94a3b8;font-size:.8rem;margin-bottom:0'>
+              আপনি যদি এই request না করে থাকেন, এই email টি ignore করুন।
+              আপনার account সুরক্ষিত আছে।
+            </p>
+          </td></tr>
+
+          <!-- Footer -->
+          <tr><td style='background:#f8fafc;border-radius:0 0 16px 16px;padding:20px 40px;text-align:center'>
+            <p style='margin:0;color:#94a3b8;font-size:.75rem'>
+              এই email টি {lib} Library System থেকে পাঠানো হয়েছে।<br>
+              Reply করবেন না — এটি একটি automated email।
+            </p>
+          </td></tr>
+
+        </table>
+      </td></tr>
+    </table>
+    </body></html>
+    """
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = 'Password Reset — Library System'
+        msg['From']    = smtp_email
+        msg['To']      = to_email
+        msg.attach(MIMEText(body, 'html'))
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(smtp_email, smtp_password)
+            server.sendmail(smtp_email, to_email, msg.as_string())
+        return True, 'Email পাঠানো হয়েছে।'
+    except Exception as e:
+        return False, str(e)
 
 # ════════════════════════════════════════════
 #  Decorators
@@ -108,6 +196,15 @@ def init_db():
         key TEXT PRIMARY KEY, value TEXT
     )''')
 
+    c.execute('''CREATE TABLE IF NOT EXISTS password_resets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        token TEXT UNIQUE NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        used INTEGER DEFAULT 0,
+        FOREIGN KEY(student_id) REFERENCES students(id)
+    )''')
+
     defaults = [
         ('library_name',    'BiblioTech'),
         ('library_tagline', 'Library System'),
@@ -118,6 +215,8 @@ def init_db():
         ('admin_password',  'admin123'),
         ('super_username',  'superadmin'),
         ('super_password',  'super123'),
+        ('smtp_email',      ''),
+        ('smtp_password',   ''),
     ]
     for key, val in defaults:
         c.execute('INSERT OR IGNORE INTO settings (key, value) VALUES (?,?)', (key, val))
@@ -297,13 +396,22 @@ def settings():
                 flash('শুধু PNG, JPG, GIF, SVG, WEBP ফাইল আপলোড করা যাবে।', 'error')
                 conn.close()
                 return redirect(url_for('settings'))
-        for key, val in {
-            'library_name': library_name or 'BiblioTech',
+        smtp_email    = request.form.get('smtp_email', '').strip()
+        smtp_password = request.form.get('smtp_password', '').strip()
+
+        updates = {
+            'library_name':    library_name    or 'BiblioTech',
             'library_tagline': library_tagline or 'Library System',
-            'library_footer': library_footer or '',
-            'library_logo': library_logo,
-            'logo_type': logo_type,
-        }.items():
+            'library_footer':  library_footer  or '',
+            'library_logo':    library_logo,
+            'logo_type':       logo_type,
+            'smtp_email':      smtp_email,
+        }
+        # Password field খালি রাখলে পুরানো password রাখব
+        if smtp_password:
+            updates['smtp_password'] = smtp_password
+
+        for key, val in updates.items():
             conn.execute('UPDATE settings SET value=? WHERE key=?', (val, key))
         conn.commit()
         conn.close()
@@ -746,3 +854,104 @@ def issued_books():
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, port=5000)
+
+
+# ════════════════════════════════════════════
+#  Student — Forgot / Reset Password
+# ════════════════════════════════════════════
+
+@app.route('/student/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        conn  = get_db()
+        student = conn.execute('SELECT * FROM students WHERE email=? AND active=1', (email,)).fetchone()
+
+        if not student:
+            # Security: একই message দেখাই — email exist না করলেও
+            flash('যদি এই email টি registered হয়, তাহলে reset link পাঠানো হবে।', 'info')
+            conn.close()
+            return redirect(url_for('forgot_password'))
+
+        # পুরনো unused token delete করি
+        conn.execute('DELETE FROM password_resets WHERE student_id=? AND used=0', (student['id'],))
+
+        # নতুন token তৈরি
+        token = secrets.token_urlsafe(32)
+        conn.execute('INSERT INTO password_resets (student_id, token) VALUES (?,?)',
+                     (student['id'], token))
+        conn.commit()
+        conn.close()
+
+        # Email পাঠাও
+        ok, msg = send_reset_email(email, student['name'], token)
+        if ok:
+            flash('Password reset link আপনার email এ পাঠানো হয়েছে! Inbox চেক করুন।', 'success')
+        else:
+            # SMTP fail হলে admin-reset এর কথা বলি
+            flash(f'Email পাঠানো যায়নি ({msg})। Admin এর সাথে যোগাযোগ করুন।', 'error')
+
+        return redirect(url_for('student_login'))
+
+    return render_template('forgot_password.html')
+
+
+@app.route('/student/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    conn  = get_db()
+    # Token valid কিনা চেক — ১ ঘণ্টার মধ্যে, ব্যবহার না হওয়া
+    reset = conn.execute("""
+        SELECT pr.*, s.name, s.email
+        FROM password_resets pr JOIN students s ON pr.student_id = s.id
+        WHERE pr.token=? AND pr.used=0
+          AND datetime(pr.created_at, '+1 hour') > datetime('now')
+    """, (token,)).fetchone()
+
+    if not reset:
+        conn.close()
+        flash('এই link টি invalid অথবা মেয়াদোত্তীর্ণ।', 'error')
+        return redirect(url_for('student_login'))
+
+    if request.method == 'POST':
+        new_pw  = request.form.get('new_password', '').strip()
+        confirm = request.form.get('confirm_password', '').strip()
+
+        if len(new_pw) < 6:
+            flash('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।', 'error')
+            conn.close()
+            return redirect(url_for('reset_password', token=token))
+        if new_pw != confirm:
+            flash('পাসওয়ার্ড দুটো মিলছে না।', 'error')
+            conn.close()
+            return redirect(url_for('reset_password', token=token))
+
+        conn.execute('UPDATE students SET password=? WHERE id=?', (new_pw, reset['student_id']))
+        conn.execute('UPDATE password_resets SET used=1 WHERE token=?', (token,))
+        conn.commit()
+        conn.close()
+        flash('পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! এখন লগইন করুন।', 'success')
+        return redirect(url_for('student_login'))
+
+    conn.close()
+    return render_template('reset_password.html', token=token, reset=reset)
+
+
+# ════════════════════════════════════════════
+#  Admin — Student Password Reset
+# ════════════════════════════════════════════
+
+@app.route('/students/reset-password/<int:student_id>', methods=['POST'])
+@admin_required
+def admin_reset_student_password(student_id):
+    new_pw = request.form.get('new_password', '').strip()
+    if len(new_pw) < 6:
+        flash('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।', 'error')
+        return redirect(url_for('students'))
+    conn = get_db()
+    s = conn.execute('SELECT name FROM students WHERE id=?', (student_id,)).fetchone()
+    if s:
+        conn.execute('UPDATE students SET password=? WHERE id=?', (new_pw, student_id))
+        conn.commit()
+        flash(f'{s["name"]} এর পাসওয়ার্ড reset হয়েছে।', 'success')
+    conn.close()
+    return redirect(url_for('students'))
